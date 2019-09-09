@@ -357,6 +357,8 @@
                         $(jQuery('#encryption_algorithm_row')).hide();
                         $(jQuery('#callback_row')).show();
                         $(jQuery('#bypass_client_credentials').hide());
+                        $("#enable_bind_access_token_to_browser").hide();
+                        $('input[name=bind_access_token_to_browser]').prop('checked', false);
 
                     } else if (oauthVersion === "<%=OAuthConstants.OAuthVersions.VERSION_2%>") {
 
@@ -375,6 +377,7 @@
                         $(jQuery('#encryption_method_row')).show();
                         $(jQuery('#encryption_algorithm_row')).show();
                         $(jQuery('#bypass_client_credentials').show());
+                        $("#enable_bind_access_token_to_browser").show();
 
                         if (!supportGrantCode && !supportImplicit) {
                             $(jQuery('#callback_row')).hide();
@@ -389,9 +392,12 @@
                         if (supportGrantCode) {
                             $(jQuery("#pkce_enable").show());
                             $(jQuery("#pkce_support_plain").show());
+                            $("#enable_bind_access_token_to_browser").show();
                         } else {
                             $(jQuery("#pkce_enable").hide());
                             $(jQuery("#pkce_support_plain").hide());
+                            $("#enable_bind_access_token_to_browser").hide();
+                            $('input[name=bind_access_token_to_browser]').prop('checked', false);
                         }
 
                         if (grantRefreshToken) {
@@ -654,6 +660,18 @@
                                         </label>
                                         <div class="sectionHelp">
                                             <fmt:message key='bypassclientcreds.support.plain.hint'/>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr id="enable_bind_access_token_to_browser">
+                                    <td colspan="2">
+                                        <label>
+                                            <input type="checkbox" name="bind_access_token_to_browser" value="true"
+                                                    <%=(app.getBindTokenToBrowser() ? "checked" : "")%>>
+                                            <fmt:message key='bind.access.token.to.browser'/>
+                                        </label>
+                                        <div class="sectionHelp">
+                                            <fmt:message key='bind.access.token.to.browser.hint'/>
                                         </div>
                                     </td>
                                 </tr>

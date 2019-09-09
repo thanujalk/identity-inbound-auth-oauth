@@ -30,8 +30,8 @@
 <%@ page import="org.wso2.carbon.utils.ServerConstants" %>
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.util.ResourceBundle" %>
 <%@ page import="java.util.Objects" %>
+<%@ page import="java.util.ResourceBundle" %>
 
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
 <%@ taglib uri="http://wso2.org/projects/carbon/taglibs/carbontags.jar" prefix="carbon"%>
@@ -77,6 +77,11 @@
 	if (request.getParameter("bypass_client_credentials") != null) {
         bypassClientCredentials = true;
 	}
+
+    boolean bindAccessTokenToBrowser = false;
+    if (Boolean.parseBoolean(request.getParameter("bind_access_token_to_browser"))) {
+        bindAccessTokenToBrowser = true;
+    }
 
     // OIDC related properties
     boolean isRequestObjectSignatureValidated = Boolean.parseBoolean(request.getParameter("validateRequestObjectSignature"));
@@ -155,6 +160,7 @@
             app.setPkceMandatory(pkceMandatory);
             app.setPkceSupportPlain(pkceSupportPlain);
             app.setBypassClientCredentials(bypassClientCredentials);
+            app.setBindTokenToBrowser(bindAccessTokenToBrowser);
 
             // Set OIDC related configuration properties.
             app.setRequestObjectSignatureValidationEnabled(isRequestObjectSignatureValidated);

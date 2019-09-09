@@ -81,6 +81,11 @@
         bypassClientCredentials = true;
     }
 
+    boolean bindAccessTokenToBrowser = false;
+    if (Boolean.parseBoolean(request.getParameter("bind_access_token_to_browser"))) {
+        bindAccessTokenToBrowser = true;
+    }
+
     // OIDC related properties
     boolean isRequestObjectSignatureValidated = Boolean.parseBoolean(request.getParameter("validateRequestObjectSignature"));
     boolean isIdTokenEncrypted = Boolean.parseBoolean(request.getParameter("encryptIdToken"));
@@ -156,6 +161,7 @@
                 app.setIdTokenEncryptionMethod(idTokenEncryptionMethod);
             }
             app.setBypassClientCredentials(bypassClientCredentials);
+            app.setBindTokenToBrowser(bindAccessTokenToBrowser);
 
             if (OAuthConstants.OIDCConfigProperties.BACK_CHANNEL_LOGOUT.equalsIgnoreCase(logoutMechanism)) {
                 app.setBackChannelLogoutUrl(logoutUrl);

@@ -278,6 +278,7 @@ public class OAuthAdminServiceImpl {
                     app.setTokenType(application.getTokenType());
                     app.setBypassClientCredentials(application.isBypassClientCredentials());
                     app.setRenewRefreshTokenEnabled(application.getRenewRefreshTokenEnabled());
+                    app.setBindTokenToBrowser(application.isBindTokenToBrowser());
                 }
                 dao.addOAuthApplication(app);
                 AppInfoCache.getInstance().addToCache(app.getOauthConsumerKey(), app);
@@ -394,6 +395,7 @@ public class OAuthAdminServiceImpl {
             oauthappdo.setBackChannelLogoutUrl(consumerAppDTO.getBackChannelLogoutUrl());
             oauthappdo.setFrontchannelLogoutUrl(consumerAppDTO.getFrontchannelLogoutUrl());
             oauthappdo.setRenewRefreshTokenEnabled(consumerAppDTO.getRenewRefreshTokenEnabled());
+            oauthappdo.setBindTokenToBrowser(consumerAppDTO.isBindTokenToBrowser());
         }
         dao.updateConsumerApplication(oauthappdo);
         AppInfoCache.getInstance().addToCache(oauthappdo.getOauthConsumerKey(), oauthappdo);

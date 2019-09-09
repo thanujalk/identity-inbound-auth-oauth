@@ -66,6 +66,7 @@ public class OAuthAppDO implements Serializable {
     @XmlTransient
     private AuthenticatedUser appOwner;
     private String tokenType;
+    private boolean bindTokenToBrowser;
 
     public AuthenticatedUser getAppOwner() {
 
@@ -293,5 +294,15 @@ public class OAuthAppDO implements Serializable {
     public String getRenewRefreshTokenEnabled() {
 
         return renewRefreshTokenEnabled;
+    }
+
+    public boolean isBindTokenToBrowser() {
+
+        return bindTokenToBrowser;
+    }
+
+    public void setBindTokenToBrowser(boolean bindTokenToBrowser) {
+
+        this.bindTokenToBrowser = bindTokenToBrowser;
     }
 }
