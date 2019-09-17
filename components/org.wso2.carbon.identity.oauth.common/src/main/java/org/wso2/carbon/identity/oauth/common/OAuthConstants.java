@@ -340,7 +340,7 @@ public final class OAuthConstants {
         public static final String TOKEN_TYPE = "tokenType";
         public static final String BYPASS_CLIENT_CREDENTIALS = "bypassClientCredentials";
         public static final String RENEW_REFRESH_TOKEN = "renewRefreshToken";
-        public static final String BIND_ACCESS_TOKEN_TO_BROWSER = "bindAccessTokenToBrowser";
+        public static final String TOKEN_BINDING_TYPE = "tokenBindingType";
 
         private OIDCConfigProperties() { }
     }

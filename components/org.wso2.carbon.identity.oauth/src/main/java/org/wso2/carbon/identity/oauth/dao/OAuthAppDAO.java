@@ -62,7 +62,6 @@ import java.util.Set;
 
 import static org.wso2.carbon.identity.oauth.OAuthUtil.handleError;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.BACK_CHANNEL_LOGOUT_URL;
-import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.BIND_ACCESS_TOKEN_TO_BROWSER;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.BYPASS_CLIENT_CREDENTIALS;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.FRONT_CHANNEL_LOGOUT_URL;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.ID_TOKEN_ENCRYPTED;
@@ -70,6 +69,7 @@ import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigPro
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.ID_TOKEN_ENCRYPTION_METHOD;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.RENEW_REFRESH_TOKEN;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.REQUEST_OBJECT_SIGNED;
+import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.TOKEN_BINDING_TYPE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OIDCConfigProperties.TOKEN_TYPE;
 import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.OPENID_CONNECT_AUDIENCE;
 
@@ -625,9 +625,8 @@ public class OAuthAppDAO {
                 oauthAppDO.getRenewRefreshTokenEnabled(), prepStatementForPropertyAdd,
                 preparedStatementForPropertyUpdate);
 
-        addOrUpdateOIDCSpProperty(preprocessedClientId, spTenantId, spOIDCProperties, BIND_ACCESS_TOKEN_TO_BROWSER,
-                String.valueOf(oauthAppDO.isBindTokenToBrowser()), prepStatementForPropertyAdd,
-                preparedStatementForPropertyUpdate);
+        addOrUpdateOIDCSpProperty(preprocessedClientId, spTenantId, spOIDCProperties, TOKEN_BINDING_TYPE,
+                oauthAppDO.getTokenBindingType(), prepStatementForPropertyAdd, preparedStatementForPropertyUpdate);
 
         // Execute batched add/update/delete.
         prepStatementForPropertyAdd.executeBatch();
@@ -1061,8 +1060,8 @@ public class OAuthAppDAO {
             addToBatchForOIDCPropertyAdd(processedClientId, spTenantId, prepStmtAddOIDCProperty,
                     RENEW_REFRESH_TOKEN, consumerAppDO.getRenewRefreshTokenEnabled());
 
-            addToBatchForOIDCPropertyAdd(processedClientId, spTenantId, prepStmtAddOIDCProperty,
-                    BIND_ACCESS_TOKEN_TO_BROWSER, String.valueOf(consumerAppDO.isBindTokenToBrowser()));
+            addToBatchForOIDCPropertyAdd(processedClientId, spTenantId, prepStmtAddOIDCProperty, TOKEN_BINDING_TYPE,
+                    String.valueOf(consumerAppDO.getTokenBindingType()));
 
             prepStmtAddOIDCProperty.executeBatch();
         }
@@ -1145,8 +1144,7 @@ public class OAuthAppDAO {
                 getFirstPropertyValue(spOIDCProperties, BYPASS_CLIENT_CREDENTIALS));
         oauthApp.setBypassClientCredentials(bypassClientCreds);
 
-        oauthApp.setBindTokenToBrowser(
-                Boolean.parseBoolean(getFirstPropertyValue(spOIDCProperties, BIND_ACCESS_TOKEN_TO_BROWSER)));
+        oauthApp.setTokenBindingType(getFirstPropertyValue(spOIDCProperties, TOKEN_BINDING_TYPE));
 
         String renewRefreshToken = getFirstPropertyValue(spOIDCProperties, RENEW_REFRESH_TOKEN);
         oauthApp.setRenewRefreshTokenEnabled(renewRefreshToken);

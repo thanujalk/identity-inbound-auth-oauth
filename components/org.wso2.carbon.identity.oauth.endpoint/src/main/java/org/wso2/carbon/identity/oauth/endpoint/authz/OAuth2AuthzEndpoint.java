@@ -87,6 +87,7 @@ import org.wso2.carbon.identity.oauth2.model.CarbonOAuthAuthzRequest;
 import org.wso2.carbon.identity.oauth2.model.HttpRequestHeaderHandler;
 import org.wso2.carbon.identity.oauth2.model.OAuth2Parameters;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
+import org.wso2.carbon.identity.oidc.session.OIDCSessionConstants;
 import org.wso2.carbon.identity.oidc.session.OIDCSessionState;
 import org.wso2.carbon.identity.oidc.session.cache.OIDCBackChannelAuthCodeCache;
 import org.wso2.carbon.identity.oidc.session.cache.OIDCBackChannelAuthCodeCacheEntry;
@@ -1044,6 +1045,9 @@ public class OAuth2AuthzEndpoint {
                                                      OAuth2Parameters oauth2Params, String responseType,
                                                      OAuth2AuthorizeRespDTO authzRespDTO) throws OAuthSystemException {
 
+        //if()
+        //oAuthMessage.getRequest().getCookies()
+
         OAuthASResponse.OAuthAuthorizationResponseBuilder builder = OAuthASResponse.authorizationResponse(
                 oAuthMessage.getRequest(), HttpServletResponse.SC_FOUND);
         // all went okay
@@ -1112,6 +1116,13 @@ public class OAuth2AuthzEndpoint {
                                       OAuthASResponse.OAuthAuthorizationResponseBuilder builder) {
 
         builder.setCode(authzRespDTO.getAuthorizationCode());
+//TODO thanuja
+
+//        Cookie cookie = new Cookie(OIDCSessionConstants.OPBS_COOKIE_ID, UUID.randomUUID().toString());
+//        cookie.setSecure(true);
+//        cookie.setPath("/");
+
+
         addUserAttributesToCache(oAuthMessage.getSessionDataCacheEntry(), authzRespDTO.getAuthorizationCode(),
                 authzRespDTO.getCodeId());
     }

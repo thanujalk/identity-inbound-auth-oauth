@@ -17,15 +17,16 @@
  -->
 
 <%@ page import="org.apache.axis2.context.ConfigurationContext"%>
-<%@ page import="org.owasp.encoder.Encode" %>
+<%@ page import="org.apache.commons.lang.StringUtils" %>
+<%@ page import="org.owasp.encoder.Encode"%>
 <%@ page import="org.wso2.carbon.CarbonConstants"%>
 <%@ page import="org.wso2.carbon.identity.core.util.IdentityUtil"%>
 <%@ page import="org.wso2.carbon.identity.oauth.common.OAuthConstants"%>
 <%@ page import="org.wso2.carbon.identity.oauth.stub.dto.OAuthConsumerAppDTO"%>
 <%@ page import="org.wso2.carbon.identity.oauth.ui.client.OAuthAdminClient"%>
-<%@ page import="org.wso2.carbon.identity.oauth.ui.util.OAuthUIUtil"%>
-<%@ page import="org.wso2.carbon.ui.CarbonUIMessage" %>
+<%@ page import="org.wso2.carbon.identity.oauth.ui.util.OAuthUIUtil" %>
 
+<%@ page import="org.wso2.carbon.ui.CarbonUIMessage" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIUtil" %>
 <%@ page import="org.wso2.carbon.utils.ServerConstants" %>
 <%@ page import="java.util.ArrayList" %>
@@ -78,10 +79,7 @@
         bypassClientCredentials = true;
 	}
 
-    boolean bindAccessTokenToBrowser = false;
-    if (Boolean.parseBoolean(request.getParameter("bind_access_token_to_browser"))) {
-        bindAccessTokenToBrowser = true;
-    }
+    String tokenBindingType = request.getParameter("accessTokenBindingType");
 
     // OIDC related properties
     boolean isRequestObjectSignatureValidated = Boolean.parseBoolean(request.getParameter("validateRequestObjectSignature"));
@@ -160,7 +158,9 @@
             app.setPkceMandatory(pkceMandatory);
             app.setPkceSupportPlain(pkceSupportPlain);
             app.setBypassClientCredentials(bypassClientCredentials);
-            app.setBindTokenToBrowser(bindAccessTokenToBrowser);
+            if (StringUtils.isNotBlank(tokenBindingType)) {
+                app.setTokenBindingType(tokenBindingType);
+            }
 
             // Set OIDC related configuration properties.
             app.setRequestObjectSignatureValidationEnabled(isRequestObjectSignatureValidated);

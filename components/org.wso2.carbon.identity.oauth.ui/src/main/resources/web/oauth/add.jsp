@@ -20,7 +20,9 @@
 <%@ page import="org.owasp.encoder.Encode" %>
 <%@ page import="org.wso2.carbon.CarbonConstants" %>
 <%@ page import="org.wso2.carbon.identity.oauth.common.OAuthConstants" %>
+<%@ page import="org.wso2.carbon.identity.oauth.stub.dto.TokenBindingMetaDataDTO" %>
 <%@ page import="org.wso2.carbon.identity.oauth.ui.client.OAuthAdminClient" %>
+<%@ page import="org.wso2.carbon.identity.oauth.ui.util.OAuthUIUtil" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIMessage" %>
 <%@ page import="org.wso2.carbon.ui.CarbonUIUtil" %>
 <%@ page import="org.wso2.carbon.utils.ServerConstants" %>
@@ -29,7 +31,6 @@
 <%@ page import="java.util.Collections" %>
 <%@ page import="java.util.List" %>
 <%@ page import="java.util.ResourceBundle" %>
-<%@ page import="org.wso2.carbon.identity.oauth.ui.util.OAuthUIUtil" %>
 
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
 <%@ taglib uri="http://wso2.org/projects/carbon/taglibs/carbontags.jar" prefix="carbon" %>
@@ -63,6 +64,7 @@
     String defaultIdTokenEncryptionMethod = client.getSupportedIDTokenAlgorithms().getDefaultIdTokenEncryptionMethod();
     String[] supportedIdTokenEncryptionMethods =
             client.getSupportedIDTokenAlgorithms().getSupportedIdTokenEncryptionMethods();
+    TokenBindingMetaDataDTO[] supportedTokenBindingsMetaData = client.getSupportedTokenBindingsMetaData();
 
     try {
         allowedGrants = new ArrayList<String>(Arrays.asList(client.getAllowedOAuthGrantTypes()));
@@ -249,8 +251,8 @@
                         $(jQuery('#callback_row')).show();
                         $(jQuery('#bypass_client_credentials').hide());
                         $(jQuery('#renew_refresh_token_per_app').hide());
-                        $("#enable_bind_access_token_to_browser").hide();
-                        $('input[name=bind_access_token_to_browser]').prop('checked', false);
+                        $('#accessTokenBindingType_none').prop('checked', true);
+                        $("#bindAccessToken").hide();
 
                     } else if(oauthVersion == "<%=OAuthConstants.OAuthVersions.VERSION_2%>") {
                         $(jQuery('#grant_row')).show();
@@ -271,7 +273,6 @@
                         $(jQuery('#encryption_method_row')).show();
                         $(jQuery('#bypass_client_credentials').show());
                         $(jQuery('#renew_refresh_token_per_app').show());
-                        $("#enable_bind_access_token_to_browser").show();
 
                         if (!supportGrantCode && !supportImplicit) {
                             $(jQuery('#callback_row')).hide();
@@ -285,12 +286,9 @@
                         if (supportGrantCode) {
                             $(jQuery("#pkce_enable").show());
                             $(jQuery("#pkce_support_plain").show());
-                            $("#enable_bind_access_token_to_browser").show();
                         } else {
                             $(jQuery("#pkce_enable").hide());
                             $(jQuery("#pkce_support_plain").hide());
-                            $("#enable_bind_access_token_to_browser").hide();
-                            $('input[name=bind_access_token_to_browser]').prop('checked', false);
                         }
                         if (grantRefreshToken) {
                             $(jQuery("#renew_refresh_token_per_app").show());
@@ -304,6 +302,36 @@
                         } else {
                             $('select[name=idTokenEncryptionAlgorithm]').prop('disabled', false);
                             $('select[name=idTokenEncryptionMethod]').prop('disabled', false);
+                        }
+
+                        var showTokenBinding = false;
+                        $('tr[id^=accessTokenBindingType_]').each(function () {
+                            debugger;
+                            if ($(this).attr('supported-grants')) {
+                                var showBindingType = false;
+                                $(this).attr('supported-grants').split(',').forEach(function (element) {
+                                    if ($('#grant_' + element) && $('#grant_' + element).prop('checked')) {
+                                        showBindingType = true;
+                                        return false;
+                                    }
+                                });
+
+                                if (showBindingType) {
+                                    $(this).show();
+                                    showTokenBinding = true;
+                                } else {
+                                    $(this).hide();
+                                    if ($(this).find('input:radio').prop('checked')) {
+                                        $('#accessTokenBindingType_none').prop('checked', true);
+                                    }
+                                }
+                            }
+                        });
+
+                        if (showTokenBinding) {
+                            $('#bindAccessToken').show();
+                        } else {
+                            $('#bindAccessToken').hide();
                         }
                     }
                 }
@@ -542,15 +570,40 @@
                                         </div>
                                     </td>
                                 </tr>
-                                <tr id="enable_bind_access_token_to_browser">
-                                    <td colspan="2">
-                                        <label>
-                                            <input type="checkbox" name="bind_access_token_to_browser" value="true">
-                                            <fmt:message key='bind.access.token.to.browser'/>
-                                        </label>
-                                        <div class="sectionHelp">
-                                            <fmt:message key='bind.access.token.to.browser.hint'/>
-                                        </div>
+                                <tr id="bindAccessToken" name="bindAccessToken">
+                                    <td class="leftCol-med"><fmt:message key='access.token.binding.type'/></td>
+                                    <td>
+                                        <table>
+                                            <tr>
+                                                <td>
+                                                    <label><input type="radio" name="accessTokenBindingType"
+                                                                  id="accessTokenBindingType_none" value=""
+                                                                  checked="checked"/>
+                                                        NONE
+                                                    </label>
+                                                </td>
+                                            </tr>
+                                            <%
+                                                for (TokenBindingMetaDataDTO tokenBindingMetaDataDTO : supportedTokenBindingsMetaData) {
+                                            %>
+                                            <tr id="accessTokenBindingType_<%=Encode.forHtmlAttribute(tokenBindingMetaDataDTO.getTokenBindingType())%>"
+                                                supported-grants="<%=Encode.forHtmlAttribute(String.join(",",tokenBindingMetaDataDTO.getSupportedGrantTypes()))%>">
+                                                <td><label><input type="radio" name="accessTokenBindingType"
+                                                                  id="<%=Encode.forHtmlAttribute(tokenBindingMetaDataDTO.getTokenBindingType())%>"
+                                                                  value="<%=Encode.forHtmlAttribute(tokenBindingMetaDataDTO.getTokenBindingType())%>"/>
+                                                    <%=Encode.forHtml(tokenBindingMetaDataDTO.getDisplayName())%>
+                                                </label>
+                                                    <div class="sectionHelp">
+                                                        <label><%=Encode
+                                                                .forHtml(tokenBindingMetaDataDTO.getDescription())%>
+                                                        </label>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            <%
+                                                }
+                                            %>
+                                        </table>
                                     </td>
                                 </tr>
                                 <tr id="userAccessTokenPlain">

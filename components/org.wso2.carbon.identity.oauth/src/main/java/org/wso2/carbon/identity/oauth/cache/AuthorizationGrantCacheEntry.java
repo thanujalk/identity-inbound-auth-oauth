@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.openidconnect.model.RequestObject;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,8 @@ public class AuthorizationGrantCacheEntry extends CacheEntry {
         userStoreDomain and tenantDomain.
      */
     private String subjectClaim;
+
+    private Map<String, String> tokenBindingData = new HashMap<>();
 
     public String getSubjectClaim() {
         return subjectClaim;
@@ -208,5 +211,25 @@ public class AuthorizationGrantCacheEntry extends CacheEntry {
      */
     public List<String> getAmrList() {
         return Collections.unmodifiableList(amrList);
+    }
+
+    /**
+     * Get token binding data.
+     *
+     * @return
+     */
+    public Map<String, String> getTokenBindingData() {
+
+        return tokenBindingData;
+    }
+
+    /**
+     * Set token binding data.
+     *
+     * @param tokenBindingData
+     */
+    public void setTokenBindingData(Map<String, String> tokenBindingData) {
+
+        this.tokenBindingData = tokenBindingData;
     }
 }

@@ -11,6 +11,20 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="getClaims">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="scope" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getClaimsResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="getScopes">
                 <xs:complexType>
                     <xs:sequence/>
@@ -32,14 +46,6 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="xs:string"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="addScope">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element minOccurs="0" name="scope" nillable="true" type="xs:string"/>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="claims" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -229,6 +235,14 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="addScope">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element minOccurs="0" name="scope" nillable="true" type="xs:string"/>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="claims" nillable="true" type="xs:string"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="updateApproveAlwaysForAppConsentByResourceOwner">
                 <xs:complexType>
                     <xs:sequence>
@@ -316,6 +330,18 @@
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
+            <xs:element name="getSupportedTokenBindingsMetaData">
+                <xs:complexType>
+                    <xs:sequence/>
+                </xs:complexType>
+            </xs:element>
+            <xs:element name="getSupportedTokenBindingsMetaDataResponse">
+                <xs:complexType>
+                    <xs:sequence>
+                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="ax2406:TokenBindingMetaDataDTO"/>
+                    </xs:sequence>
+                </xs:complexType>
+            </xs:element>
             <xs:element name="getSupportedIDTokenAlgorithms">
                 <xs:complexType>
                     <xs:sequence/>
@@ -337,20 +363,6 @@
                 <xs:complexType>
                     <xs:sequence>
                         <xs:element minOccurs="0" name="return" type="xs:boolean"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="getClaims">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element minOccurs="0" name="scope" nillable="true" type="xs:string"/>
-                    </xs:sequence>
-                </xs:complexType>
-            </xs:element>
-            <xs:element name="getClaimsResponse">
-                <xs:complexType>
-                    <xs:sequence>
-                        <xs:element maxOccurs="unbounded" minOccurs="0" name="return" nillable="true" type="xs:string"/>
                     </xs:sequence>
                 </xs:complexType>
             </xs:element>
@@ -386,7 +398,6 @@
                     <xs:element minOccurs="0" name="applicationName" nillable="true" type="xs:string"/>
                     <xs:element maxOccurs="unbounded" minOccurs="0" name="audiences" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="backChannelLogoutUrl" nillable="true" type="xs:string"/>
-                    <xs:element minOccurs="0" name="bindTokenToBrowser" type="xs:boolean"/>
                     <xs:element minOccurs="0" name="bypassClientCredentials" type="xs:boolean"/>
                     <xs:element minOccurs="0" name="callbackUrl" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="frontchannelLogoutUrl" nillable="true" type="xs:string"/>
@@ -404,6 +415,7 @@
                     <xs:element minOccurs="0" name="requestObjectSignatureValidationEnabled" type="xs:boolean"/>
                     <xs:element maxOccurs="unbounded" minOccurs="0" name="scopeValidators" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="state" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="tokenBindingType" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="tokenType" nillable="true" type="xs:string"/>
                     <xs:element minOccurs="0" name="userAccessTokenExpiryTime" type="xs:long"/>
                     <xs:element minOccurs="0" name="username" nillable="true" type="xs:string"/>
@@ -430,6 +442,14 @@
                     <xs:element minOccurs="0" name="idTokenExpiryTime" type="xs:long"/>
                     <xs:element minOccurs="0" name="refreshTokenExpiryTime" type="xs:long"/>
                     <xs:element minOccurs="0" name="userAccessTokenExpiryTime" type="xs:long"/>
+                </xs:sequence>
+            </xs:complexType>
+            <xs:complexType name="TokenBindingMetaDataDTO">
+                <xs:sequence>
+                    <xs:element minOccurs="0" name="description" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="displayName" nillable="true" type="xs:string"/>
+                    <xs:element maxOccurs="unbounded" minOccurs="0" name="supportedGrantTypes" nillable="true" type="xs:string"/>
+                    <xs:element minOccurs="0" name="tokenBindingType" nillable="true" type="xs:string"/>
                 </xs:sequence>
             </xs:complexType>
             <xs:complexType name="OAuthIDTokenAlgorithmDTO">
@@ -586,6 +606,12 @@
     <wsdl:message name="getTokenExpiryTimesResponse">
         <wsdl:part name="parameters" element="ns1:getTokenExpiryTimesResponse"/>
     </wsdl:message>
+    <wsdl:message name="getSupportedTokenBindingsMetaDataRequest">
+        <wsdl:part name="parameters" element="ns1:getSupportedTokenBindingsMetaData"/>
+    </wsdl:message>
+    <wsdl:message name="getSupportedTokenBindingsMetaDataResponse">
+        <wsdl:part name="parameters" element="ns1:getSupportedTokenBindingsMetaDataResponse"/>
+    </wsdl:message>
     <wsdl:message name="getScopeNamesRequest">
         <wsdl:part name="parameters" element="ns1:getScopeNames"/>
     </wsdl:message>
@@ -736,6 +762,10 @@
         <wsdl:operation name="getTokenExpiryTimes">
             <wsdl:input message="tns:getTokenExpiryTimesRequest" wsaw:Action="urn:getTokenExpiryTimes"/>
             <wsdl:output message="tns:getTokenExpiryTimesResponse" wsaw:Action="urn:getTokenExpiryTimesResponse"/>
+        </wsdl:operation>
+        <wsdl:operation name="getSupportedTokenBindingsMetaData">
+            <wsdl:input message="tns:getSupportedTokenBindingsMetaDataRequest" wsaw:Action="urn:getSupportedTokenBindingsMetaData"/>
+            <wsdl:output message="tns:getSupportedTokenBindingsMetaDataResponse" wsaw:Action="urn:getSupportedTokenBindingsMetaDataResponse"/>
         </wsdl:operation>
         <wsdl:operation name="getScopeNames">
             <wsdl:input message="tns:getScopeNamesRequest" wsaw:Action="urn:getScopeNames"/>
@@ -1049,6 +1079,15 @@
         </wsdl:operation>
         <wsdl:operation name="getTokenExpiryTimes">
             <soap:operation soapAction="urn:getTokenExpiryTimes" style="document"/>
+            <wsdl:input>
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSupportedTokenBindingsMetaData">
+            <soap:operation soapAction="urn:getSupportedTokenBindingsMetaData" style="document"/>
             <wsdl:input>
                 <soap:body use="literal"/>
             </wsdl:input>
@@ -1401,6 +1440,15 @@
                 <soap12:body use="literal"/>
             </wsdl:output>
         </wsdl:operation>
+        <wsdl:operation name="getSupportedTokenBindingsMetaData">
+            <soap12:operation soapAction="urn:getSupportedTokenBindingsMetaData" style="document"/>
+            <wsdl:input>
+                <soap12:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output>
+                <soap12:body use="literal"/>
+            </wsdl:output>
+        </wsdl:operation>
         <wsdl:operation name="getScopeNames">
             <soap12:operation soapAction="urn:getScopeNames" style="document"/>
             <wsdl:input>
@@ -1682,6 +1730,15 @@
         </wsdl:operation>
         <wsdl:operation name="getTokenExpiryTimes">
             <http:operation location="getTokenExpiryTimes"/>
+            <wsdl:input>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:input>
+            <wsdl:output>
+                <mime:content type="text/xml" part="parameters"/>
+            </wsdl:output>
+        </wsdl:operation>
+        <wsdl:operation name="getSupportedTokenBindingsMetaData">
+            <http:operation location="getSupportedTokenBindingsMetaData"/>
             <wsdl:input>
                 <mime:content type="text/xml" part="parameters"/>
             </wsdl:input>

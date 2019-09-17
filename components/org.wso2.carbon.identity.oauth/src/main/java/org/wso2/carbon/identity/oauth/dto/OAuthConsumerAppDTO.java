@@ -46,7 +46,7 @@ public class OAuthConsumerAppDTO {
     private String frontchannelLogoutUrl;
     private long idTokenExpiryTime;
     private String tokenType;
-    private boolean bindTokenToBrowser;
+    private String tokenBindingType;
 
     public long getUserAccessTokenExpiryTime() {
         return userAccessTokenExpiryTime;
@@ -260,14 +260,14 @@ public class OAuthConsumerAppDTO {
         return renewRefreshTokenEnabled;
     }
 
-    public boolean isBindTokenToBrowser() {
+    public String getTokenBindingType() {
 
-        return bindTokenToBrowser;
+        return tokenBindingType;
     }
 
-    public void setBindTokenToBrowser(boolean bindTokenToBrowser) {
+    public void setTokenBindingType(String tokenBindingType) {
 
-        this.bindTokenToBrowser = bindTokenToBrowser;
+        this.tokenBindingType = tokenBindingType;
     }
 }
 
