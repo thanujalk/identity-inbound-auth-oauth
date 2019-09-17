@@ -21,7 +21,6 @@ package org.wso2.carbon.identity.oauth2.token.bindings;
 import org.wso2.carbon.identity.oauth.common.token.bindings.TokenBinderInfo;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface TokenBinder extends TokenBinderInfo {
