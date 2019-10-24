@@ -45,6 +45,9 @@ import org.wso2.carbon.identity.oauth2.ResponseHeader;
 import org.wso2.carbon.identity.oauth2.bean.OAuthClientAuthnContext;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenRespDTO;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.AuthorizationGrantHandler;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openidconnect.IDTokenBuilder;
@@ -53,6 +56,7 @@ import org.wso2.carbon.utils.CarbonUtils;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OauthAppStates.APP_STATE_ACTIVE;
@@ -267,6 +271,33 @@ public class AccessTokenIssuer {
             setResponseHeaders(tokReqMsgCtx, tokenRespDTO);
             triggerPostListeners(tokenReqDTO, tokenRespDTO, tokReqMsgCtx, isRefreshRequest);
             return tokenRespDTO;
+        }
+
+        if (StringUtils.isNotBlank(oAuthAppDO.getTokenBindingType())) {
+            Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
+                    .getTokenBinder(oAuthAppDO.getTokenBindingType());
+
+            if (tokenBinderOptional.isPresent()) {
+                TokenBinder tokenBinder = tokenBinderOptional.get();
+                if (tokenBinder.getSupportedGrantTypes().contains(grantType)) {
+                    Optional<String> tokenBindingValueOptional = tokenBinder.getTokenBindingValue(tokenReqDTO);
+                    if (tokenBindingValueOptional.isPresent()) {
+                        String tokenBindingValue = tokenBindingValueOptional.get();
+                        tokReqMsgCtx.setTokenBinding(new TokenBinding(tokenBinder.getBindingType(),
+                                OAuth2Util.getTokenBindingReference(tokenBindingValue), tokenBindingValue));
+                    } else {
+                        //TODO - Decide whether to throw an error.
+                        if (log.isDebugEnabled()) {
+                            log.debug(
+                                    "Token binding reference cannot be retrieved form the token binder: " + tokenBinder
+                                            .getBindingType());
+                        }
+                    }
+                }
+            } else {
+                log.warn("Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not "
+                        + "registered.");
+            }
         }
 
         try {

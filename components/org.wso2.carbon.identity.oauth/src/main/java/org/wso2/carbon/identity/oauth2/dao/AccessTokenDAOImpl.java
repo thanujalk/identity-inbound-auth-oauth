@@ -62,6 +62,8 @@ import java.util.TimeZone;
 import java.util.UUID;
 
 import static org.wso2.carbon.identity.core.util.IdentityUtil.getProperty;
+import static org.wso2.carbon.identity.oauth.common.OAuthConstants.TokenBindings.NONE;
+import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.STORE_TOKEN_BINDING;
 
 /*
 NOTE
@@ -202,10 +204,15 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
             } else {
                 insertTokenPrepStmt.setString(17, accessTokenDO.getRefreshToken());
             }
-            insertTokenPrepStmt.setString(18, getPersistenceProcessor().getProcessedClientId(consumerKey));
+            String tokenBindingReference = NONE;
+            if(accessTokenDO.getTokenBinding() != null) {
+                tokenBindingReference =  accessTokenDO.getTokenBinding().getBindingReference();
+            }
+            insertTokenPrepStmt.setString(18, tokenBindingReference);
+            insertTokenPrepStmt.setString(19, getPersistenceProcessor().getProcessedClientId(consumerKey));
             if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
-                insertTokenPrepStmt.setString(19, authenticatedIDP);
-                insertTokenPrepStmt.setInt(20, tenantId);
+                insertTokenPrepStmt.setString(20, authenticatedIDP);
+                insertTokenPrepStmt.setInt(21, tenantId);
             }
             insertTokenPrepStmt.execute();
 
@@ -220,6 +227,17 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     addScopePrepStmt.execute();
                 }
             }
+
+            if (accessTokenDO.getTokenBinding() != null) {
+                PreparedStatement preparedStatement = connection.prepareStatement(STORE_TOKEN_BINDING);
+                preparedStatement.setString(1, accessTokenId);
+                preparedStatement.setString(2, accessTokenDO.getTokenBinding().getBindingType());
+                preparedStatement.setString(3, accessTokenDO.getTokenBinding().getBindingReference());
+                preparedStatement.setString(4, accessTokenDO.getTokenBinding().getBindingValue());
+                preparedStatement.setInt(5, tenantId);
+                preparedStatement.execute();
+            }
+
             if (retryAttemptCounter > 0) {
                 log.info("Successfully recovered 'CON_APP_KEY' constraint violation with the attempt : " +
                         retryAttemptCounter);
@@ -312,10 +330,15 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
     }
 
     @Override
-    public AccessTokenDO getLatestAccessToken(String consumerKey, AuthenticatedUser authzUser,
-                                              String userStoreDomain, String scope,
-                                              boolean includeExpiredTokens)
-            throws IdentityOAuth2Exception {
+    public AccessTokenDO getLatestAccessToken(String consumerKey, AuthenticatedUser authzUser, String userStoreDomain,
+            String scope, boolean includeExpiredTokens) throws IdentityOAuth2Exception {
+
+        return getLatestAccessToken(consumerKey, authzUser, userStoreDomain, scope, NONE, includeExpiredTokens);
+    }
+
+    @Override
+    public AccessTokenDO getLatestAccessToken(String consumerKey, AuthenticatedUser authzUser, String userStoreDomain,
+            String scope, String tokenBindingReference, boolean includeExpiredTokens) throws IdentityOAuth2Exception {
 
         if (log.isDebugEnabled()) {
             log.debug("Retrieving latest access token for client: " + consumerKey + " user: " + authzUser.toString()
@@ -405,6 +428,9 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
 
             if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
                 prepStmt.setString(6, authenticatedIDP);
+                prepStmt.setString(7, tokenBindingReference);
+            } else {
+                prepStmt.setString(6, tokenBindingReference);
             }
 
             resultSet = prepStmt.executeQuery();
@@ -451,10 +477,12 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     accessTokenDO.setRefreshToken(refreshToken);
                     accessTokenDO.setTokenState(tokenState);
                     accessTokenDO.setTokenId(tokenId);
-                    if (log.isDebugEnabled() && IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens
-                            .ACCESS_TOKEN)) {
-                        log.debug("Retrieved latest access token(hashed): " + DigestUtils.sha256Hex(accessToken) +
-                                " for client: " + consumerKey + " user: " + authzUser.toString() + " scope: " + scope);
+                    //accessTokenDO.setTokenBinding(tokenBindingReference);
+                    if (log.isDebugEnabled() && IdentityUtil
+                            .isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
+                        log.debug("Retrieved latest access token(hashed): " + DigestUtils.sha256Hex(accessToken)
+                                + " for client: " + consumerKey + " user: " + authzUser.toString() + " scope: " + scope
+                                + " token binding reference: " + tokenBindingReference);
                     }
                     return accessTokenDO;
                 }

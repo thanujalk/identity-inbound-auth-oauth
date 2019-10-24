@@ -18,14 +18,24 @@
 
 package org.wso2.carbon.identity.oauth2.token.bindings;
 
+import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.wso2.carbon.identity.oauth.common.token.bindings.TokenBinderInfo;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 public interface TokenBinder extends TokenBinderInfo {
 
-    Optional<TokenBinding> getTokenBinding(String tokenId) throws IdentityOAuth2Exception;
+    String getOrGenerateTokenBindingValue(HttpServletRequest request) throws OAuthSystemException;
+
+    Optional<String> getTokenBindingValue(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO);
+
+    void setTokenBindingValueForResponse(HttpServletResponse response, String tokenBindingValue);
+
+    void clearTokenBindingElements(HttpServletRequest request, HttpServletResponse response);
 
     void storeTokenBinding(TokenBinding tokenBinding, String tenantDomain) throws IdentityOAuth2Exception;
 

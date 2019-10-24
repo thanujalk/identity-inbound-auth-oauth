@@ -245,7 +245,7 @@ public class OAuthAdminServiceImpl {
                 } else {   // by default, assume OAuth 2.0, if it is not set.
                     app.setOauthVersion(OAuthConstants.OAuthVersions.VERSION_2);
                 }
-                if (OAuthConstants.OAuthVersions.VERSION_2.equals(app.getOauthVersion())) {
+                    if (OAuthConstants.OAuthVersions.VERSION_2.equals(app.getOauthVersion())) {
                     List<String> allowedGrantTypes = new ArrayList<String>(Arrays.asList(getAllowedGrantTypes()));
                     String[] requestGrants = application.getGrantTypes().split("\\s");
                     for (String requestedGrant : requestGrants) {

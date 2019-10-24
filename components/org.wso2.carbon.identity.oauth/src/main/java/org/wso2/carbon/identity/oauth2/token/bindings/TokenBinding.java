@@ -36,6 +36,14 @@ public class TokenBinding {
         this.bindingValue = bindingValue;
     }
 
+    public TokenBinding(String bindingType, String bindingReference, String bindingValue) {
+
+        this.bindingType = bindingType;
+        this.bindingReference = bindingReference;
+        this.bindingValue = bindingValue;
+    }
+
+
     public String getTokenId() {
 
         return tokenId;

@@ -605,7 +605,9 @@ public class OAuth2Util {
      * @param authorizedUser   Authorised user.
      * @param authenticatedIDP Authenticated IdP.
      * @return Cache key string combining the input parameters.
+     * @deprecated use {@link #buildCacheKeyStringForToken(String, String, String, String, String)} instead.
      */
+    @Deprecated
     public static String buildCacheKeyStringForToken(String clientId, String scope, String authorizedUser,
                                                      String authenticatedIDP) {
 
@@ -615,6 +617,33 @@ public class OAuth2Util {
         } else {
             return clientId + ":" + authorizedUser.toLowerCase() + ":" + scope + ":" + authenticatedIDP;
         }
+    }
+
+    /**
+     * Build the cache key string when storing token info in cache.
+     *
+     * @param clientId         ClientId of the App.
+     * @param scope            Scopes used.
+     * @param authorizedUser   Authorised user.
+     * @param authenticatedIDP Authenticated IdP.
+     * @param tokenBindingReference Token binding reference.
+     * @return Cache key string combining the input parameters.
+     */
+    public static String buildCacheKeyStringForToken(String clientId, String scope, String authorizedUser,
+            String authenticatedIDP, String tokenBindingReference) {
+
+        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(authorizedUser);
+        if (isUsernameCaseSensitive) {
+            return clientId + ":" + authorizedUser + ":" + scope + ":" + authenticatedIDP + ":" + tokenBindingReference;
+        } else {
+            return clientId + ":" + authorizedUser.toLowerCase() + ":" + scope + ":" + authenticatedIDP + ":"
+                    + tokenBindingReference;
+        }
+    }
+
+    public static String getTokenBindingReference(String tokenBindingValue) {
+
+        return DigestUtils.md5Hex(tokenBindingValue);
     }
 
     public static AccessTokenDO validateAccessTokenDO(AccessTokenDO accessTokenDO) {

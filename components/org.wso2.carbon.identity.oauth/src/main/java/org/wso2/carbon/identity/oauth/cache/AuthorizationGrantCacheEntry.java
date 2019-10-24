@@ -69,7 +69,7 @@ public class AuthorizationGrantCacheEntry extends CacheEntry {
      */
     private String subjectClaim;
 
-    private Map<String, String> tokenBindingData = new HashMap<>();
+    private String tokenBindingValue;
 
     public String getSubjectClaim() {
         return subjectClaim;
@@ -214,22 +214,22 @@ public class AuthorizationGrantCacheEntry extends CacheEntry {
     }
 
     /**
-     * Get token binding data.
+     * Get token binding value.
      *
-     * @return
+     * @return token binding value.
      */
-    public Map<String, String> getTokenBindingData() {
+    public String getTokenBindingValue() {
 
-        return tokenBindingData;
+        return tokenBindingValue;
     }
 
     /**
-     * Set token binding data.
+     * Set token binding value.
      *
-     * @param tokenBindingData
+     * @param tokenBindingValue
      */
-    public void setTokenBindingData(Map<String, String> tokenBindingData) {
+    public void setTokenBindingValue(String tokenBindingValue) {
 
-        this.tokenBindingData = tokenBindingData;
+        this.tokenBindingValue = tokenBindingValue;
     }
 }

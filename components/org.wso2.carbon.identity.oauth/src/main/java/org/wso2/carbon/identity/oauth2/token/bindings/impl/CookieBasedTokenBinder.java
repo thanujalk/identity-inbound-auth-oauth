@@ -18,12 +18,23 @@
 
 package org.wso2.carbon.identity.oauth2.token.bindings.impl;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
+import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
-import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.AUTHORIZATION_CODE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.IMPLICIT;
@@ -31,6 +42,8 @@ import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.IM
 public class CookieBasedTokenBinder extends AbstractTokenBinder {
 
     private static final String BINDING_TYPE = "cookie";
+
+    private static final String COOKIE_NAME = "tokenBindingValue";
 
     private List<String> supportedGrantTypes = Arrays.asList(AUTHORIZATION_CODE, IMPLICIT);
 
@@ -56,6 +69,64 @@ public class CookieBasedTokenBinder extends AbstractTokenBinder {
     public String getDescription() {
 
         return "Bind token to the browser cookie.";
+    }
+
+    @Override
+    public String getOrGenerateTokenBindingValue(HttpServletRequest request) throws OAuthSystemException {
+
+        Cookie[] cookies = request.getCookies();
+        if (ArrayUtils.isNotEmpty(cookies)) {
+            Optional<Cookie> tokenBindingCookieOptional = Arrays.stream(cookies)
+                    .filter(t -> COOKIE_NAME.equals(t.getName())).findAny();
+            if (tokenBindingCookieOptional.isPresent()) {
+                //TODO
+                return tokenBindingCookieOptional.get().getValue();
+            }
+        }
+
+        return UUID.randomUUID().toString();
+    }
+
+    @Override
+    public Optional<String> getTokenBindingValue(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO) {
+
+        if (AUTHORIZATION_CODE.equals(oAuth2AccessTokenReqDTO.getGrantType()) && StringUtils
+                .isNotBlank(oAuth2AccessTokenReqDTO.getAuthorizationCode())) {
+
+            AuthorizationGrantCacheKey cacheKey = new AuthorizationGrantCacheKey(
+                    oAuth2AccessTokenReqDTO.getAuthorizationCode());
+            AuthorizationGrantCacheEntry authorizationGrantCacheEntry = AuthorizationGrantCache.getInstance()
+                    .getValueFromCacheByCode(cacheKey);
+            if (authorizationGrantCacheEntry != null && StringUtils
+                    .isNotBlank(authorizationGrantCacheEntry.getTokenBindingValue())) {
+                return Optional.of(authorizationGrantCacheEntry.getTokenBindingValue());
+            }
+        }
+        return Optional.empty();
+    }
+
+    @Override
+    public void setTokenBindingValueForResponse(HttpServletResponse response, String tokenBindingValue) {
+
+        Cookie cookie = new Cookie(COOKIE_NAME, tokenBindingValue);
+        cookie.setSecure(true);
+        cookie.setHttpOnly(true);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+    }
+
+    @Override
+    public void clearTokenBindingElements(HttpServletRequest request, HttpServletResponse response) {
+
+        Cookie[] cookies = request.getCookies();
+        if (ArrayUtils.isNotEmpty(cookies)) {
+            Arrays.stream(cookies).filter(t -> COOKIE_NAME.equals(t.getName())).findAny().ifPresent(cookie -> {
+                cookie.setMaxAge(0);
+                cookie.setSecure(true);
+                cookie.setPath("/");
+                response.addCookie(cookie);
+            });
+        }
     }
 
     @Override

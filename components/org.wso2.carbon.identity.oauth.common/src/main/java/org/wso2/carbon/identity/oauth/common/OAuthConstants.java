@@ -368,6 +368,11 @@ public final class OAuthConstants {
         private SignatureAlgorithms() {}
     }
 
+    public static class TokenBindings {
+
+        public static final String NONE = "NONE";
+    }
+
     private OAuthConstants() {
 
     }
