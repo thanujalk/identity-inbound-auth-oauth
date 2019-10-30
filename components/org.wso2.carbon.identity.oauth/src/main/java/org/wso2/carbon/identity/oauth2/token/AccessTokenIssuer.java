@@ -273,32 +273,7 @@ public class AccessTokenIssuer {
             return tokenRespDTO;
         }
 
-        if (StringUtils.isNotBlank(oAuthAppDO.getTokenBindingType())) {
-            Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
-                    .getTokenBinder(oAuthAppDO.getTokenBindingType());
-
-            if (tokenBinderOptional.isPresent()) {
-                TokenBinder tokenBinder = tokenBinderOptional.get();
-                if (tokenBinder.getSupportedGrantTypes().contains(grantType)) {
-                    Optional<String> tokenBindingValueOptional = tokenBinder.getTokenBindingValue(tokenReqDTO);
-                    if (tokenBindingValueOptional.isPresent()) {
-                        String tokenBindingValue = tokenBindingValueOptional.get();
-                        tokReqMsgCtx.setTokenBinding(new TokenBinding(tokenBinder.getBindingType(),
-                                OAuth2Util.getTokenBindingReference(tokenBindingValue), tokenBindingValue));
-                    } else {
-                        //TODO - Decide whether to throw an error.
-                        if (log.isDebugEnabled()) {
-                            log.debug(
-                                    "Token binding reference cannot be retrieved form the token binder: " + tokenBinder
-                                            .getBindingType());
-                        }
-                    }
-                }
-            } else {
-                log.warn("Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not "
-                        + "registered.");
-            }
-        }
+        handleTokenBinding(tokenReqDTO, grantType, tokReqMsgCtx, oAuthAppDO);
 
         try {
             // set the token request context to be used by downstream handlers. This is introduced as a fix for
@@ -357,6 +332,50 @@ public class AccessTokenIssuer {
         }
 
         return tokenRespDTO;
+    }
+
+    private void handleTokenBinding(OAuth2AccessTokenReqDTO tokenReqDTO, String grantType,
+            OAuthTokenReqMessageContext tokReqMsgCtx, OAuthAppDO oAuthAppDO) {
+
+        TokenBinding tokenBinding = tokReqMsgCtx.getTokenBinding();
+        tokReqMsgCtx.setTokenBinding(null);
+
+        if (StringUtils.isBlank(oAuthAppDO.getTokenBindingType())) {
+            return;
+        }
+
+        Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
+                .getTokenBinder(oAuthAppDO.getTokenBindingType());
+        if (!tokenBinderOptional.isPresent()) {
+            log.warn("Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not "
+                    + "registered.");
+            return;
+        }
+
+        TokenBinder tokenBinder = tokenBinderOptional.get();
+        if (!tokenBinder.getSupportedGrantTypes().contains(grantType)) {
+            return;
+        }
+
+        if (tokenBinding != null && tokenBinder.getBindingType().equals(tokenBinding.getBindingType())) {
+            tokReqMsgCtx.setTokenBinding(tokenBinding);
+            return;
+        }
+
+        Optional<String> tokenBindingValueOptional = tokenBinder.getTokenBindingValue(tokenReqDTO);
+        if (!tokenBindingValueOptional.isPresent()) {
+            //TODO - Decide whether to throw an error.
+            if (log.isDebugEnabled()) {
+                log.debug("Token binding reference cannot be retrieved form the token binder: " + tokenBinder
+                        .getBindingType());
+            }
+            return;
+        }
+
+        String tokenBindingValue = tokenBindingValueOptional.get();
+        tokReqMsgCtx.setTokenBinding(
+                new TokenBinding(tokenBinder.getBindingType(), OAuth2Util.getTokenBindingReference(tokenBindingValue),
+                        tokenBindingValue));
     }
 
     private void triggerPreListeners(OAuth2AccessTokenReqDTO tokenReqDTO,

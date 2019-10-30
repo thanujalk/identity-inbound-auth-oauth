@@ -26,7 +26,9 @@ import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
+import org.wso2.carbon.identity.oauth2.model.HttpRequestHeader;
 
+import java.net.HttpCookie;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -35,9 +37,11 @@ import java.util.UUID;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.HttpHeaders;
 
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.AUTHORIZATION_CODE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.IMPLICIT;
+import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.REFRESH_TOKEN;
 
 public class CookieBasedTokenBinder extends AbstractTokenBinder {
 
@@ -45,7 +49,7 @@ public class CookieBasedTokenBinder extends AbstractTokenBinder {
 
     private static final String COOKIE_NAME = "tokenBindingValue";
 
-    private List<String> supportedGrantTypes = Arrays.asList(AUTHORIZATION_CODE, IMPLICIT);
+    private List<String> supportedGrantTypes = Arrays.asList(AUTHORIZATION_CODE, IMPLICIT, REFRESH_TOKEN);
 
     @Override
     public String getBindingType() {
@@ -101,7 +105,30 @@ public class CookieBasedTokenBinder extends AbstractTokenBinder {
                     .isNotBlank(authorizationGrantCacheEntry.getTokenBindingValue())) {
                 return Optional.of(authorizationGrantCacheEntry.getTokenBindingValue());
             }
+        } else if (REFRESH_TOKEN.equals(oAuth2AccessTokenReqDTO.getGrantType())) {
+
+            HttpRequestHeader[] httpRequestHeaders = oAuth2AccessTokenReqDTO.getHttpRequestHeaders();
+            if (ArrayUtils.isEmpty(httpRequestHeaders)) {
+                return Optional.empty();
+            }
+
+            for (HttpRequestHeader httpRequestHeader : httpRequestHeaders) {
+                if (HttpHeaders.COOKIE.equalsIgnoreCase(httpRequestHeader.getName())) {
+                    if (ArrayUtils.isEmpty(httpRequestHeader.getValue())) {
+                        return Optional.empty();
+                    }
+
+                    String[] cookies = httpRequestHeader.getValue()[0].split(";");
+                    String cookiePrefix = COOKIE_NAME + "=";
+                    for (String cookie : cookies) {
+                        if (StringUtils.isNotBlank(cookie) && cookie.trim().startsWith(cookiePrefix)) {
+                            return Optional.of((HttpCookie.parse(cookie).get(0).getValue()));
+                        }
+                    }
+                }
+            }
         }
+
         return Optional.empty();
     }
 

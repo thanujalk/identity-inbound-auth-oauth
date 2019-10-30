@@ -1967,8 +1967,17 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
      * @return
      * @throws IdentityOAuth2Exception
      */
+    @Override
     public List<AccessTokenDO> getLatestAccessTokens(String consumerKey, AuthenticatedUser authzUser,
-                                                     String userStoreDomain, String scope,
+            String userStoreDomain, String scope, boolean includeExpiredTokens, int limit)
+            throws IdentityOAuth2Exception {
+
+        return getLatestAccessTokens(consumerKey, authzUser, userStoreDomain, scope, NONE, includeExpiredTokens, limit);
+    }
+
+
+    public List<AccessTokenDO> getLatestAccessTokens(String consumerKey, AuthenticatedUser authzUser,
+                                                     String userStoreDomain, String scope, String tokenBindingReference,
                                                      boolean includeExpiredTokens, int limit)
             throws IdentityOAuth2Exception {
 
@@ -2073,6 +2082,9 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
 
             if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
                 prepStmt.setString(6, authenticatedIDP);
+                prepStmt.setString(7, tokenBindingReference);
+            } else {
+                prepStmt.setString(6, tokenBindingReference);
             }
 
             resultSet = prepStmt.executeQuery();

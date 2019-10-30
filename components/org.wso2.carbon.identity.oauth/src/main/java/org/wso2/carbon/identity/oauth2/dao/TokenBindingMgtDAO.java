@@ -25,7 +25,8 @@ import java.util.Optional;
 
 public interface TokenBindingMgtDAO {
 
-    Optional<TokenBinding> getTokenBinding(String tokenId) throws IdentityOAuth2Exception;
+    Optional<TokenBinding> getTokenBinding(String tokenId, String tokenBindingReference)
+            throws IdentityOAuth2Exception;
 
     void storeTokenBinding(TokenBinding tokenBinding, int tenantId) throws IdentityOAuth2Exception;
 

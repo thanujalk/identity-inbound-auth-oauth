@@ -47,7 +47,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
-import org.apache.oltu.oauth2.common.message.types.ResponseType;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.wso2.carbon.core.util.KeyStoreManager;
@@ -643,6 +642,9 @@ public class OAuth2Util {
 
     public static String getTokenBindingReference(String tokenBindingValue) {
 
+        if (StringUtils.isBlank(tokenBindingValue)) {
+            return null;
+        }
         return DigestUtils.md5Hex(tokenBindingValue);
     }
 
