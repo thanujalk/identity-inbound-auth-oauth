@@ -28,6 +28,10 @@ public class TokenBinding {
 
     private String bindingValue;
 
+    public TokenBinding() {
+
+    }
+
     public TokenBinding(String tokenId, String bindingType, String bindingReference, String bindingValue) {
 
         this.tokenId = tokenId;
@@ -42,7 +46,6 @@ public class TokenBinding {
         this.bindingReference = bindingReference;
         this.bindingValue = bindingValue;
     }
-
 
     public String getTokenId() {
 

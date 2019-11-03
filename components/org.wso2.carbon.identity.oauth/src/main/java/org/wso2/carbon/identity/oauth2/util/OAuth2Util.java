@@ -99,6 +99,8 @@ import org.wso2.carbon.identity.oauth2.model.ClientCredentialDO;
 import org.wso2.carbon.identity.oauth2.token.JWTTokenIssuer;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.identity.oauth2.token.OauthTokenIssuer;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 import org.wso2.carbon.identity.oauth2.token.handlers.grant.AuthorizationGrantHandler;
 import org.wso2.carbon.identity.openidconnect.model.RequestedClaim;
 import org.wso2.carbon.idp.mgt.IdentityProviderManagementException;
@@ -140,12 +142,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
 import javax.xml.namespace.QName;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamException;
@@ -3213,5 +3217,29 @@ public class OAuth2Util {
         }
 
         return isIdpIdAvailableInAuthzCodeTable && isIdpIdAvailableInTokenTable && isIdpIdAvailableInTokenAuditTable;
+    }
+
+    /**
+     * Check whether required token binding available in the request.
+     *
+     * @param tokenBinding token binding.
+     * @param request http request.
+     * @return true if binding is valid.
+     */
+    public static boolean isValidTokenBinding(TokenBinding tokenBinding, HttpServletRequest request) {
+
+        if (request == null || tokenBinding == null || StringUtils.isBlank(tokenBinding.getBindingReference())
+                || StringUtils.isBlank(tokenBinding.getBindingType())) {
+            return true;
+        }
+
+        Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
+                .getTokenBinder(tokenBinding.getBindingType());
+        if (!tokenBinderOptional.isPresent()) {
+            log.warn("Token binder with type: " + tokenBinding.getBindingType() + " is not available.");
+            return false;
+        }
+
+        return tokenBinderOptional.get().isValidTokenBinding(request, tokenBinding.getBindingReference());
     }
 }

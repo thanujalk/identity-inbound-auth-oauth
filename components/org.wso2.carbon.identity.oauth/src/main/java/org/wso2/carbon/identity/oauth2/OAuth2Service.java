@@ -63,6 +63,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static org.wso2.carbon.identity.oauth.common.OAuthConstants.TokenBindings.NONE;
+import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.isValidTokenBinding;
+
 /**
  * OAuth2 Service which is used to issue authorization codes or access tokens upon authorizing by the
  * user and issue/validateGrant access tokens.
@@ -386,13 +389,25 @@ public class OAuth2Service extends AbstractAdmin {
 
                 } else if (accessTokenDO != null) {
                     if (revokeRequestDTO.getConsumerKey().equals(accessTokenDO.getConsumerKey())) {
+                        if (!isValidTokenBinding(accessTokenDO.getTokenBinding(), revokeRequestDTO.getRequest())) {
+                            revokeResponseDTO.setError(true);
+                            revokeResponseDTO.setErrorCode(OAuth2ErrorCodes.ACCESS_DENIED);
+                            revokeResponseDTO.setErrorMsg("Valid token binding value not present in the request.");
+                            return revokeResponseDTO;
+                        }
                         OAuthUtil.clearOAuthCache(revokeRequestDTO.getConsumerKey(), accessTokenDO.getAuthzUser(),
                                 OAuth2Util.buildScopeString(accessTokenDO.getScope()));
                         OAuthUtil.clearOAuthCache(revokeRequestDTO.getConsumerKey(), accessTokenDO.getAuthzUser());
                         OAuthUtil.clearOAuthCache(accessTokenDO.getAccessToken());
                         String scope = OAuth2Util.buildScopeString(accessTokenDO.getScope());
                         String authorizedUser = accessTokenDO.getAuthzUser().toString();
-                        synchronized ((revokeRequestDTO.getConsumerKey() + ":" + authorizedUser + ":" + scope).intern()) {
+                        String tokenBindingReference = NONE;
+                        if (accessTokenDO.getTokenBinding() != null || StringUtils
+                                .isNotBlank(accessTokenDO.getTokenBinding().getBindingReference())) {
+                            tokenBindingReference = accessTokenDO.getTokenBinding().getBindingReference();
+                        }
+                        synchronized ((revokeRequestDTO.getConsumerKey() + ":" + authorizedUser + ":" + scope + ":"
+                                + tokenBindingReference).intern()) {
                             OAuthTokenPersistenceFactory.getInstance().getAccessTokenDAO()
                                     .revokeAccessTokens(new String[] { accessTokenDO.getAccessToken() });
                         }

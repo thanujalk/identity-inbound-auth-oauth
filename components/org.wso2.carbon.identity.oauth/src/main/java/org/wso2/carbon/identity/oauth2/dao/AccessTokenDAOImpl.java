@@ -39,6 +39,7 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.token.OauthTokenIssuer;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 import org.wso2.carbon.identity.oauth2.util.OAuth2TokenUtil;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 
@@ -63,6 +64,7 @@ import java.util.UUID;
 
 import static org.wso2.carbon.identity.core.util.IdentityUtil.getProperty;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.TokenBindings.NONE;
+import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.RETRIEVE_TOKEN_BINDING_BY_TOKEN_ID;
 import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.STORE_TOKEN_BINDING;
 
 /*
@@ -856,8 +858,12 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     String grantType = resultSet.getString(13);
                     String subjectIdentifier = resultSet.getString(14);
                     String authenticatedIDP = null;
+                    String tokenBindingReference = null;
                     if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
                         authenticatedIDP = resultSet.getString(15);
+                        tokenBindingReference = resultSet.getString(16);
+                    } else {
+                        tokenBindingReference = resultSet.getString(15);
                     }
 
                     AuthenticatedUser user = OAuth2Util.createAuthenticatedUser(authorizedUser,
@@ -881,6 +887,21 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     dataDO.setGrantType(grantType);
                     dataDO.setTenantID(tenantId);
 
+                    if (StringUtils.isNotBlank(tokenBindingReference) && !NONE.equals(tokenBindingReference)) {
+                        try (PreparedStatement tokenBindingPreparedStatement = connection
+                                .prepareStatement(RETRIEVE_TOKEN_BINDING_BY_TOKEN_ID)) {
+                            tokenBindingPreparedStatement.setString(1, tokenId);
+                            try (ResultSet tokenBindingResultSet = tokenBindingPreparedStatement.executeQuery()) {
+                                if (tokenBindingResultSet.next()) {
+                                    TokenBinding tokenBinding = new TokenBinding();
+                                    tokenBinding.setBindingType(tokenBindingResultSet.getString("TOKEN_BINDING_TYPE"));
+                                    tokenBinding
+                                            .setBindingReference(tokenBindingResultSet.getString("TOKEN_BINDING_REF"));
+                                    dataDO.setTokenBinding(tokenBinding);
+                                }
+                            }
+                        }
+                    }
                 } else {
                     scopes.add(resultSet.getString(5));
                 }

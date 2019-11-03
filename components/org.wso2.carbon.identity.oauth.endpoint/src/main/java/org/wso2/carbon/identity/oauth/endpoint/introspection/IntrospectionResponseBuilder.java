@@ -188,6 +188,20 @@ public class IntrospectionResponseBuilder {
         return this;
     }
 
+    public IntrospectionResponseBuilder setBindingType(String bindingType) {
+        if (StringUtils.isNotBlank(bindingType)) {
+            parameters.put(IntrospectionResponse.BINDING_TYPE, bindingType);
+        }
+        return this;
+    }
+
+    public IntrospectionResponseBuilder setBindingReference(String bindingReference) {
+        if (StringUtils.isNotBlank(bindingReference)) {
+            parameters.put(IntrospectionResponse.BINDING_REFERENCE, bindingReference);
+        }
+        return this;
+    }
+
     /**
      * @param errorCode Error Code
      * @return IntrospectionResponseBuilder

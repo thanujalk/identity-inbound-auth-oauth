@@ -48,6 +48,7 @@ import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEA
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEADER_PRAGMA;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEADER_VAL_CACHE_CONTROL_NO_STORE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEADER_VAL_PRAGMA_NO_CACHE;
+import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.isValidTokenBinding;
 
 @Path("/userinfo")
 public class OpenIDConnectUserEndpoint {
@@ -70,6 +71,12 @@ public class OpenIDConnectUserEndpoint {
                     UserInfoEndpointConfig.getInstance().getUserInfoAccessTokenValidator();
             OAuth2TokenValidationResponseDTO tokenResponse = tokenValidator.validateToken(accessToken);
 
+            if (tokenResponse.isValid()) {
+                if (!isValidTokenBinding(tokenResponse.getTokenBinding(), request)) {
+                    throw new UserInfoEndpointException(OAuthError.ResourceResponse.INVALID_REQUEST,
+                            "Valid token binding value not present in the request.");
+                }
+            }
             // build the claims
             //ToDO - Validate the grant type to be implicit or authorization_code before retrieving claims
             UserInfoResponseBuilder userInfoResponseBuilder =

@@ -24,9 +24,10 @@ import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
-import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.model.HttpRequestHeader;
+import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
+import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 
 import java.net.HttpCookie;
 import java.util.Arrays;
@@ -40,16 +41,15 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.HttpHeaders;
 
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.AUTHORIZATION_CODE;
-import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.IMPLICIT;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.REFRESH_TOKEN;
 
-public class CookieBasedTokenBinder extends AbstractTokenBinder {
+public class CookieBasedTokenBinder implements TokenBinder {
 
     private static final String BINDING_TYPE = "cookie";
 
     private static final String COOKIE_NAME = "tokenBindingValue";
 
-    private List<String> supportedGrantTypes = Arrays.asList(AUTHORIZATION_CODE, IMPLICIT, REFRESH_TOKEN);
+    private List<String> supportedGrantTypes = Arrays.asList(AUTHORIZATION_CODE, REFRESH_TOKEN);
 
     @Override
     public String getBindingType() {
@@ -157,8 +157,25 @@ public class CookieBasedTokenBinder extends AbstractTokenBinder {
     }
 
     @Override
-    public boolean validate() throws IdentityOAuth2Exception {
+    public boolean isValidTokenBinding(Object request, String bindingReference) {
 
-        return true;
+        if (request == null || StringUtils.isBlank(bindingReference)) {
+            return false;
+        }
+
+        if (request instanceof HttpServletRequest) {
+            Cookie[] cookies = ((HttpServletRequest) request).getCookies();
+            if (ArrayUtils.isEmpty(cookies)) {
+                return false;
+            }
+
+            for (Cookie cookie : cookies) {
+                if (COOKIE_NAME.equals(cookie.getName())) {
+                    return bindingReference.equals(OAuth2Util.getTokenBindingReference(cookie.getValue()));
+                }
+            }
+        }
+
+        throw new RuntimeException("Unsupported request type: " + request.getClass().getName());
     }
 }
