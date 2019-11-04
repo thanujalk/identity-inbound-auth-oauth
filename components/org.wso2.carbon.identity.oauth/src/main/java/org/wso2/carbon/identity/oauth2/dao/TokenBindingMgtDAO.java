@@ -23,12 +23,43 @@ import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinding;
 
 import java.util.Optional;
 
+/**
+ * This class represents the token binding DO.
+ */
 public interface TokenBindingMgtDAO {
 
-    Optional<TokenBinding> getTokenBinding(String tokenId, String tokenBindingReference)
-            throws IdentityOAuth2Exception;
+    /**
+     * Get access token binding by token id.
+     *
+     * @param tokenId token id.
+     * @return token binding optional.
+     * @throws IdentityOAuth2Exception in case of failure.
+     */
+    Optional<TokenBinding> getTokenBinding(String tokenId) throws IdentityOAuth2Exception;
 
+    /**
+     * Check whether the token binding exists for the token binding reference.
+     *
+     * @param tokenBindingReference token binding reference.
+     * @return true if token binding reference exists.
+     * @throws IdentityOAuth2Exception in case of failure.
+     */
+    boolean isTokenBindingExistsForBindingReference(String tokenBindingReference) throws IdentityOAuth2Exception;
+
+    /**
+     * Store access token binding.
+     *
+     * @param tokenBinding token binding.
+     * @param tenantId tenant id.
+     * @throws IdentityOAuth2Exception in case of failure.
+     */
     void storeTokenBinding(TokenBinding tokenBinding, int tenantId) throws IdentityOAuth2Exception;
 
+    /**
+     * Delete access token binding.
+     *
+     * @param tokenId token id.
+     * @throws IdentityOAuth2Exception in case of failure.
+     */
     void deleteTokenBinding(String tokenId) throws IdentityOAuth2Exception;
 }

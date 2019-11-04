@@ -20,13 +20,36 @@ package org.wso2.carbon.identity.oauth.common.token.bindings;
 
 import java.util.List;
 
+/**
+ * This interface represents the token binder information which is required for the UI population.
+ */
 public interface TokenBinderInfo {
 
+    /**
+     * Get display name of the token binder.
+     *
+     * @return display name.
+     */
     String getDisplayName();
 
+    /**
+     * Get description about the token binder.
+     *
+     * @return description.
+     */
     String getDescription();
 
+    /**
+     * Get binding type of the token binder.
+     *
+     * @return binding type.
+     */
     String getBindingType();
 
+    /**
+     * Get supported grant types of the token binder.
+     *
+     * @return list of supported grant types.
+     */
     List<String> getSupportedGrantTypes();
 }

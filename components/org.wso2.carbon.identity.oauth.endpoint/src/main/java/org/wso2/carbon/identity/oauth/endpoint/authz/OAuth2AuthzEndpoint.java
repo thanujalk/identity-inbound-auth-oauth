@@ -1082,27 +1082,27 @@ public class OAuth2AuthzEndpoint {
         return oauthResponse;
     }
 
-    private Optional<TokenBinder> getTokenBinder(String clientId)
-            throws OAuthSystemException {
+    private Optional<TokenBinder> getTokenBinder(String clientId) throws OAuthSystemException {
 
         OAuthAppDO oAuthAppDO;
         try {
             oAuthAppDO = OAuth2Util.getAppInformationByClientId(clientId);
         } catch (IdentityOAuth2Exception | InvalidOAuthClientException e) {
-            throw new OAuthSystemException(
-                    "Failed to retrieve OAuth application with client id: " + clientId);
+            throw new OAuthSystemException("Failed to retrieve OAuth application with client id: " + clientId, e);
         }
 
-        String tokenBindingValue = null;
-        if (oAuthAppDO != null && StringUtils.isNotBlank(oAuthAppDO.getTokenBindingType())) {
-            OAuth2Service oAuth2Service = getOAuth2OSGiService();
-            List<TokenBinder> supportedTokenBinders = oAuth2Service.getSupportedTokenBinders();
-            if (supportedTokenBinders != null && !supportedTokenBinders.isEmpty()) {
-                return supportedTokenBinders.stream()
-                        .filter(t -> t.getBindingType().equals(oAuthAppDO.getTokenBindingType())).findAny();
-            }
+        if (oAuthAppDO == null || StringUtils.isBlank(oAuthAppDO.getTokenBindingType())) {
+            return Optional.empty();
         }
-        return Optional.empty();
+
+        OAuth2Service oAuth2Service = getOAuth2OSGiService();
+        List<TokenBinder> supportedTokenBinders = oAuth2Service.getSupportedTokenBinders();
+        if (supportedTokenBinders == null || supportedTokenBinders.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return supportedTokenBinders.stream().filter(t -> t.getBindingType().equals(oAuthAppDO.getTokenBindingType()))
+                .findAny();
     }
 
     private OAuth2Service getOAuth2OSGiService() throws OAuthSystemException {
@@ -1112,6 +1112,7 @@ public class OAuth2AuthzEndpoint {
         if (oAuth2Service == null) {
             throw new OAuthSystemException("Failed to get the OSGi Service: OAuth2Service");
         }
+
         return (OAuth2Service) oAuth2Service;
     }
 

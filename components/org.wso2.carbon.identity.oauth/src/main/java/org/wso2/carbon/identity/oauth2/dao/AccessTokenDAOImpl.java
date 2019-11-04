@@ -206,11 +206,12 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
             } else {
                 insertTokenPrepStmt.setString(17, accessTokenDO.getRefreshToken());
             }
-            String tokenBindingReference = NONE;
-            if(accessTokenDO.getTokenBinding() != null) {
-                tokenBindingReference =  accessTokenDO.getTokenBinding().getBindingReference();
+            boolean tokenBindingAvailable = isTokenBindingAvailable(accessTokenDO.getTokenBinding());
+            if (tokenBindingAvailable) {
+                insertTokenPrepStmt.setString(18, accessTokenDO.getTokenBinding().getBindingReference());
+            } else {
+                insertTokenPrepStmt.setString(18, NONE);
             }
-            insertTokenPrepStmt.setString(18, tokenBindingReference);
             insertTokenPrepStmt.setString(19, getPersistenceProcessor().getProcessedClientId(consumerKey));
             if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
                 insertTokenPrepStmt.setString(20, authenticatedIDP);
@@ -230,7 +231,7 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                 }
             }
 
-            if (accessTokenDO.getTokenBinding() != null) {
+            if (tokenBindingAvailable) {
                 PreparedStatement preparedStatement = connection.prepareStatement(STORE_TOKEN_BINDING);
                 preparedStatement.setString(1, accessTokenId);
                 preparedStatement.setString(2, accessTokenDO.getTokenBinding().getBindingType());
@@ -479,7 +480,6 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     accessTokenDO.setRefreshToken(refreshToken);
                     accessTokenDO.setTokenState(tokenState);
                     accessTokenDO.setTokenId(tokenId);
-                    //accessTokenDO.setTokenBinding(tokenBindingReference);
                     if (log.isDebugEnabled() && IdentityUtil
                             .isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
                         log.debug("Retrieved latest access token(hashed): " + DigestUtils.sha256Hex(accessToken)
@@ -858,7 +858,7 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                     String grantType = resultSet.getString(13);
                     String subjectIdentifier = resultSet.getString(14);
                     String authenticatedIDP = null;
-                    String tokenBindingReference = null;
+                    String tokenBindingReference;
                     if (OAuth2ServiceComponentHolder.isIDPIdColumnEnabled()) {
                         authenticatedIDP = resultSet.getString(15);
                         tokenBindingReference = resultSet.getString(16);
@@ -897,6 +897,8 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
                                     tokenBinding.setBindingType(tokenBindingResultSet.getString("TOKEN_BINDING_TYPE"));
                                     tokenBinding
                                             .setBindingReference(tokenBindingResultSet.getString("TOKEN_BINDING_REF"));
+                                    tokenBinding
+                                            .setBindingValue(tokenBindingResultSet.getString("TOKEN_BINDING_VALUE"));
                                     dataDO.setTokenBinding(tokenBinding);
                                 }
                             }
@@ -1996,7 +1998,7 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
         return getLatestAccessTokens(consumerKey, authzUser, userStoreDomain, scope, NONE, includeExpiredTokens, limit);
     }
 
-
+    @Override
     public List<AccessTokenDO> getLatestAccessTokens(String consumerKey, AuthenticatedUser authzUser,
                                                      String userStoreDomain, String scope, String tokenBindingReference,
                                                      boolean includeExpiredTokens, int limit)
@@ -2178,5 +2180,18 @@ public class AccessTokenDAOImpl extends AbstractOAuthDAO implements AccessTokenD
 
         return !OAuthServerConfiguration.getInstance().isMapFederatedUsersToLocal() &&
                 accessTokenDO.getAuthzUser().isFederatedUser();
+    }
+
+    /**
+     * Check whether a valid access token binding available.
+     *
+     * @param tokenBinding token binding.
+     * @return true if valid binding available.
+     */
+    private boolean isTokenBindingAvailable(TokenBinding tokenBinding) {
+
+        return tokenBinding != null && StringUtils.isNotBlank(tokenBinding.getBindingType()) && StringUtils
+                .isNotBlank(tokenBinding.getBindingReference()) && StringUtils
+                .isNotBlank(tokenBinding.getBindingValue());
     }
 }

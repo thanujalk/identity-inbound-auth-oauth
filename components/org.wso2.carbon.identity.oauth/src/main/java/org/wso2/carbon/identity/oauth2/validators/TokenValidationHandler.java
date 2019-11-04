@@ -44,8 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static org.wso2.carbon.identity.oauth.common.OAuthConstants.TokenBindings.NONE;
-
 /**
  * Handles the token validation by invoking the proper validation handler by looking at the token
  * type.
@@ -423,7 +421,7 @@ public class TokenValidationHandler {
             // add client id
             introResp.setClientId(accessTokenDO.getConsumerKey());
             // Set token binding info.
-            if(accessTokenDO.getTokenBinding() !=  null) {
+            if (accessTokenDO.getTokenBinding() != null) {
                 introResp.setBindingType(accessTokenDO.getTokenBinding().getBindingType());
                 introResp.setBindingReference(accessTokenDO.getTokenBinding().getBindingReference());
             }

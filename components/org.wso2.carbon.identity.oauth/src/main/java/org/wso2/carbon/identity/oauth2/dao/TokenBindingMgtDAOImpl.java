@@ -33,7 +33,8 @@ import java.sql.SQLException;
 import java.util.Optional;
 
 import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.DELETE_TOKEN_BINDING_BY_TOKEN_ID;
-import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.RETRIEVE_TOKEN_BINDING_BY_BINDING_REFERENCE;
+import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.RETRIEVE_TOKEN_BINDING_BY_TOKEN_ID;
+import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.RETRIEVE_TOKEN_BINDING_REF_EXISTS;
 import static org.wso2.carbon.identity.oauth2.dao.SQLQueries.STORE_TOKEN_BINDING;
 
 public class TokenBindingMgtDAOImpl implements TokenBindingMgtDAO {
@@ -41,26 +42,42 @@ public class TokenBindingMgtDAOImpl implements TokenBindingMgtDAO {
     private static final Log log = LogFactory.getLog(TokenBindingMgtDAOImpl.class);
 
     @Override
-    public Optional<TokenBinding> getTokenBinding(String tokenId, String tokenBindingReference)
-            throws IdentityOAuth2Exception {
+    public Optional<TokenBinding> getTokenBinding(String tokenId) throws IdentityOAuth2Exception {
 
         try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
-                PreparedStatement preparedStatement = connection
-                        .prepareStatement(RETRIEVE_TOKEN_BINDING_BY_BINDING_REFERENCE)) {
+                PreparedStatement preparedStatement = connection.prepareStatement(RETRIEVE_TOKEN_BINDING_BY_TOKEN_ID)) {
             preparedStatement.setString(1, tokenId);
-            preparedStatement.setString(2, tokenBindingReference);
 
             try (ResultSet resultSet = preparedStatement.executeQuery()) {
                 if (resultSet.next()) {
                     TokenBinding tokenBinding = new TokenBinding(resultSet.getString("TOKEN_BINDING_TYPE"),
-                            tokenBindingReference, resultSet.getString("TOKEN_BINDING_VALUE"));
+                            resultSet.getString("TOKEN_BINDING_REF"), resultSet.getString("TOKEN_BINDING_VALUE"));
                     return Optional.of(tokenBinding);
                 }
                 return Optional.empty();
             }
         } catch (SQLException e) {
-            throw new IdentityOAuth2Exception("Failed to get token binding for the token id: " + tokenId + ", binding"
-                    + " ref: " + tokenBindingReference, e);
+            throw new IdentityOAuth2Exception("Failed to get token binding for the token id: " + tokenId, e);
+        }
+    }
+
+    @Override
+    public boolean isTokenBindingExistsForBindingReference(String tokenBindingReference)
+            throws IdentityOAuth2Exception {
+
+        try (Connection connection = IdentityDatabaseUtil.getDBConnection(false);
+                PreparedStatement preparedStatement = connection.prepareStatement(RETRIEVE_TOKEN_BINDING_REF_EXISTS)) {
+            preparedStatement.setString(1, tokenBindingReference);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getInt("TOTAL") > 0;
+                }
+                return false;
+            }
+        } catch (SQLException e) {
+            throw new IdentityOAuth2Exception(
+                    "Failed to check the existance of token binding reference: " + tokenBindingReference, e);
         }
     }
 

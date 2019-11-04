@@ -336,8 +336,8 @@ public class OAuthAdminClient {
     /**
      * Get supported token bindings metadata.
      *
-     * @return Array of TokenBindingMetaDataDTO.
-     * @throws RemoteException
+     * @return Array of TokenBindingMetaDataDTOs.
+     * @throws RemoteException remote exception.
      */
     public TokenBindingMetaDataDTO[] getSupportedTokenBindingsMetaData() throws RemoteException {
 

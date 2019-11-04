@@ -18,6 +18,9 @@
 
 package org.wso2.carbon.identity.oauth2.token.bindings;
 
+/**
+ * This class provides the token binding implementation.
+ */
 public class TokenBinding {
 
     private String tokenId;
@@ -45,6 +48,12 @@ public class TokenBinding {
         this.bindingType = bindingType;
         this.bindingReference = bindingReference;
         this.bindingValue = bindingValue;
+    }
+
+    public TokenBinding(String bindingType, String bindingReference) {
+
+        this.bindingType = bindingType;
+        this.bindingReference = bindingReference;
     }
 
     public String getTokenId() {

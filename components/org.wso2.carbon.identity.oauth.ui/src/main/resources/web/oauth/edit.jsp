@@ -425,7 +425,6 @@
 
                         var showTokenBinding = false;
                         $('tr[id^=accessTokenBindingType_]').each(function () {
-                            debugger;
                             if ($(this).attr('supported-grants')) {
                                 var showBindingType = false;
                                 $(this).attr('supported-grants').split(',').forEach(function (element) {

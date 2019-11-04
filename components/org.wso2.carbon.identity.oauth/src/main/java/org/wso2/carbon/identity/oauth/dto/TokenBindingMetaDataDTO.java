@@ -19,6 +19,9 @@ package org.wso2.carbon.identity.oauth.dto;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * This class represents the token binding meta data DTO.
+ */
 public class TokenBindingMetaDataDTO implements Serializable {
 
     private static final long serialVersionUID = 6372165740005823232L;
@@ -30,6 +33,10 @@ public class TokenBindingMetaDataDTO implements Serializable {
     private String tokenBindingType;
 
     private List<String> supportedGrantTypes;
+
+    public TokenBindingMetaDataDTO() {
+
+    }
 
     public TokenBindingMetaDataDTO(String displayName, String description, String tokenBindingType,
             List<String> supportedGrantTypes) {

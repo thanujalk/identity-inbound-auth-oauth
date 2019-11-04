@@ -335,7 +335,7 @@ public class AccessTokenIssuer {
     }
 
     private void handleTokenBinding(OAuth2AccessTokenReqDTO tokenReqDTO, String grantType,
-            OAuthTokenReqMessageContext tokReqMsgCtx, OAuthAppDO oAuthAppDO) {
+            OAuthTokenReqMessageContext tokReqMsgCtx, OAuthAppDO oAuthAppDO) throws IdentityOAuth2Exception {
 
         TokenBinding tokenBinding = tokReqMsgCtx.getTokenBinding();
         tokReqMsgCtx.setTokenBinding(null);
@@ -347,9 +347,8 @@ public class AccessTokenIssuer {
         Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
                 .getTokenBinder(oAuthAppDO.getTokenBindingType());
         if (!tokenBinderOptional.isPresent()) {
-            log.warn("Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not "
-                    + "registered.");
-            return;
+            throw new IdentityOAuth2Exception(
+                    "Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not registered.");
         }
 
         TokenBinder tokenBinder = tokenBinderOptional.get();
@@ -364,12 +363,8 @@ public class AccessTokenIssuer {
 
         Optional<String> tokenBindingValueOptional = tokenBinder.getTokenBindingValue(tokenReqDTO);
         if (!tokenBindingValueOptional.isPresent()) {
-            //TODO - Decide whether to throw an error.
-            if (log.isDebugEnabled()) {
-                log.debug("Token binding reference cannot be retrieved form the token binder: " + tokenBinder
-                        .getBindingType());
-            }
-            return;
+            throw new IdentityOAuth2Exception("Token binding reference cannot be retrieved form the token binder: "
+                    + tokenBinder.getBindingType());
         }
 
         String tokenBindingValue = tokenBindingValueOptional.get();

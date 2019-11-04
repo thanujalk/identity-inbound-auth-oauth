@@ -24,6 +24,8 @@ import org.apache.oltu.oauth2.common.exception.OAuthSystemException;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCache;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheEntry;
 import org.wso2.carbon.identity.oauth.cache.AuthorizationGrantCacheKey;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 import org.wso2.carbon.identity.oauth2.model.HttpRequestHeader;
 import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
@@ -43,6 +45,9 @@ import javax.ws.rs.core.HttpHeaders;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.AUTHORIZATION_CODE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.GrantTypes.REFRESH_TOKEN;
 
+/**
+ * This class provides the cookie based token binder implementation.
+ */
 public class CookieBasedTokenBinder implements TokenBinder {
 
     private static final String BINDING_TYPE = "cookie";
@@ -79,15 +84,30 @@ public class CookieBasedTokenBinder implements TokenBinder {
     public String getOrGenerateTokenBindingValue(HttpServletRequest request) throws OAuthSystemException {
 
         Cookie[] cookies = request.getCookies();
-        if (ArrayUtils.isNotEmpty(cookies)) {
-            Optional<Cookie> tokenBindingCookieOptional = Arrays.stream(cookies)
-                    .filter(t -> COOKIE_NAME.equals(t.getName())).findAny();
-            if (tokenBindingCookieOptional.isPresent()) {
-                //TODO
-                return tokenBindingCookieOptional.get().getValue();
-            }
+        if (ArrayUtils.isEmpty(cookies)) {
+            return UUID.randomUUID().toString();
         }
 
+        Optional<Cookie> tokenBindingCookieOptional = Arrays.stream(cookies)
+                .filter(t -> COOKIE_NAME.equals(t.getName())).findAny();
+        if (!tokenBindingCookieOptional.isPresent() || StringUtils
+                .isBlank(tokenBindingCookieOptional.get().getValue())) {
+            return UUID.randomUUID().toString();
+        }
+
+        String tokenBindingValue = tokenBindingCookieOptional.get().getValue();
+        boolean isTokenBindingValueValid;
+        try {
+            // Do we need additional validation here? like validate local user.
+            isTokenBindingValueValid = OAuthTokenPersistenceFactory.getInstance().getTokenBindingMgtDAO()
+                    .isTokenBindingExistsForBindingReference(OAuth2Util.getTokenBindingReference(tokenBindingValue));
+        } catch (IdentityOAuth2Exception e) {
+            throw new OAuthSystemException("Failed to check token binding reference existence", e);
+        }
+
+        if (isTokenBindingValueValid) {
+            return tokenBindingValue;
+        }
         return UUID.randomUUID().toString();
     }
 
@@ -133,9 +153,9 @@ public class CookieBasedTokenBinder implements TokenBinder {
     }
 
     @Override
-    public void setTokenBindingValueForResponse(HttpServletResponse response, String tokenBindingValue) {
+    public void setTokenBindingValueForResponse(HttpServletResponse response, String bindingValue) {
 
-        Cookie cookie = new Cookie(COOKIE_NAME, tokenBindingValue);
+        Cookie cookie = new Cookie(COOKIE_NAME, bindingValue);
         cookie.setSecure(true);
         cookie.setHttpOnly(true);
         cookie.setPath("/");
@@ -150,6 +170,7 @@ public class CookieBasedTokenBinder implements TokenBinder {
             Arrays.stream(cookies).filter(t -> COOKIE_NAME.equals(t.getName())).findAny().ifPresent(cookie -> {
                 cookie.setMaxAge(0);
                 cookie.setSecure(true);
+                cookie.setHttpOnly(true);
                 cookie.setPath("/");
                 response.addCookie(cookie);
             });

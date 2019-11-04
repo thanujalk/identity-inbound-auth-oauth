@@ -168,7 +168,7 @@ public class RefreshGrantHandler extends AbstractAuthorizationGrantHandler {
                 .equals(validationBean.getTokenBindingReference())) {
             Optional<TokenBinding> tokenBindingOptional = OAuthTokenPersistenceFactory.getInstance()
                     .getTokenBindingMgtDAO()
-                    .getTokenBinding(validationBean.getTokenId(), validationBean.getTokenBindingReference());
+                    .getTokenBinding(validationBean.getTokenId());
             tokenBindingOptional.ifPresent(tokReqMsgCtx::setTokenBinding);
         }
         // Store the old access token as a OAuthTokenReqMessageContext property, this is already
@@ -632,9 +632,8 @@ public class RefreshGrantHandler extends AbstractAuthorizationGrantHandler {
         Optional<TokenBinder> tokenBinderOptional = OAuth2ServiceComponentHolder.getInstance()
                 .getTokenBinder(oAuthAppDO.getTokenBindingType());
         if (!tokenBinderOptional.isPresent()) {
-            log.warn("Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not "
-                    + "registered.");
-            return;
+            throw new IdentityOAuth2Exception(
+                    "Token binder for the binding type: " + oAuthAppDO.getTokenBindingType() + " is not registered.");
         }
 
         TokenBinder tokenBinder = tokenBinderOptional.get();

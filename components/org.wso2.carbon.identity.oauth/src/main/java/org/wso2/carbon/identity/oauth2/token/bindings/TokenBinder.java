@@ -26,15 +26,50 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+/**
+ * This interface represents the token binder API.
+ */
 public interface TokenBinder extends TokenBinderInfo {
 
+    /**
+     * Get or generate token binding value.
+     *
+     * @param request http servlet request.
+     * @return token binding value.
+     * @throws OAuthSystemException in case of failure.
+     */
     String getOrGenerateTokenBindingValue(HttpServletRequest request) throws OAuthSystemException;
 
+    /**
+     * Get token binding value.
+     *
+     * @param oAuth2AccessTokenReqDTO OAuth2 access token request DTO.
+     * @return token binding value optional.
+     */
     Optional<String> getTokenBindingValue(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO);
 
-    void setTokenBindingValueForResponse(HttpServletResponse response, String tokenBindingValue);
+    /**
+     * Set token binding value for the response.
+     *
+     * @param response http servlet response.
+     * @param bindingValue token binding value.
+     */
+    void setTokenBindingValueForResponse(HttpServletResponse response, String bindingValue);
 
+    /**
+     * Clear token binding elements.
+     *
+     * @param request http servlet request.
+     * @param response http servlet response.
+     */
     void clearTokenBindingElements(HttpServletRequest request, HttpServletResponse response);
 
+    /**
+     * Get validity of the token binding.
+     *
+     * @param request request object.
+     * @param bindingReference token binding reference
+     * @return true if token binding is valid.
+     */
     boolean isValidTokenBinding(Object request, String bindingReference);
 }

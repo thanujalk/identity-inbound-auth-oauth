@@ -402,7 +402,7 @@ public class OAuth2Service extends AbstractAdmin {
                         String scope = OAuth2Util.buildScopeString(accessTokenDO.getScope());
                         String authorizedUser = accessTokenDO.getAuthzUser().toString();
                         String tokenBindingReference = NONE;
-                        if (accessTokenDO.getTokenBinding() != null || StringUtils
+                        if (accessTokenDO.getTokenBinding() != null && StringUtils
                                 .isNotBlank(accessTokenDO.getTokenBinding().getBindingReference())) {
                             tokenBindingReference = accessTokenDO.getTokenBinding().getBindingReference();
                         }

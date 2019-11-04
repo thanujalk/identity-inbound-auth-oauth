@@ -172,12 +172,7 @@ public class OAuth2ServiceComponentHolder {
 
     public Optional<TokenBinder> getTokenBinder(String bindingType) {
 
-        for (TokenBinder tokenBinder : tokenBinders) {
-            if (tokenBinder.getBindingType().equals(bindingType)) {
-                return Optional.of(tokenBinder);
-            }
-        }
-        return Optional.empty();
+        return tokenBinders.stream().filter(t -> t.getBindingType().equals(bindingType)).findAny();
     }
 
     public void addTokenBinder(TokenBinder tokenBinder) {

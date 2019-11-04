@@ -372,7 +372,7 @@ public class OAuthAdminService extends AbstractAdmin {
     /**
      * Get supported token bindings meta data.
      *
-     * @return list of TokenBindingMetaDataDTO
+     * @return list of TokenBindingMetaDataDTOs.
      */
     public List<TokenBindingMetaDataDTO> getSupportedTokenBindingsMetaData() {
 
