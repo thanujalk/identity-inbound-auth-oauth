@@ -17,7 +17,7 @@
  */
 package org.wso2.carbon.identity.oidc.dcr.handler;
 
-
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.identity.application.authentication.framework.inbound.IdentityResponse;
@@ -30,17 +30,28 @@ import org.wso2.carbon.identity.oauth.dcr.model.RegistrationResponse;
 import org.wso2.carbon.identity.oauth.dcr.model.RegistrationResponseProfile;
 import org.wso2.carbon.identity.oauth.dcr.service.DCRManagementService;
 
+/**
+ * Handler class responsible for OIDC registration.
+ */
 public class OIDCRegistrationHandler extends RegistrationHandler {
+
     private static final Log log = LogFactory.getLog(OIDCRegistrationHandler.class);
 
     @Override
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     public IdentityResponse.IdentityResponseBuilder handle(DCRMessageContext dcrMessageContext) throws DCRException {
+
         if (log.isDebugEnabled()) {
             log.debug("Request processing started by RegistrationRequestProcessor.");
         }
-        RegistrationResponse.DCRRegisterResponseBuilder dcrRegisterResponseBuilder = null;
+        RegistrationResponse.DCRRegisterResponseBuilder dcrRegisterResponseBuilder;
 
-        RegistrationRequest registerRequest = (RegistrationRequest) dcrMessageContext.getIdentityRequest();
+        RegistrationRequest registerRequest;
+        if (dcrMessageContext.getIdentityRequest() instanceof RegistrationRequest) {
+            registerRequest = (RegistrationRequest) dcrMessageContext.getIdentityRequest();
+        } else {
+            throw new DCRException("Error while retrieving the registration request.");
+        }
         RegistrationRequestProfile registrationRequestProfile = registerRequest.getRegistrationRequestProfile();
         registrationRequestProfile.setTenantDomain(registerRequest.getTenantDomain());
 
@@ -49,7 +60,6 @@ public class OIDCRegistrationHandler extends RegistrationHandler {
 
         dcrRegisterResponseBuilder = new RegistrationResponse.DCRRegisterResponseBuilder();
         dcrRegisterResponseBuilder.setRegistrationResponseProfile(registrationResponseProfile);
-
 
         return dcrRegisterResponseBuilder;
     }

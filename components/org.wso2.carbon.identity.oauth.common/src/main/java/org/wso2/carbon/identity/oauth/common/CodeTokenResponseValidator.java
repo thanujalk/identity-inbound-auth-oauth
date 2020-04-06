@@ -27,7 +27,6 @@ import org.apache.oltu.oauth2.common.exception.OAuthProblemException;
 import javax.servlet.http.HttpServletRequest;
 
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OAuth20Params.CLIENT_ID;
-import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OAuth20Params.NONCE;
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OAuth20Params.SCOPE;
 
 /**
@@ -36,6 +35,24 @@ import static org.wso2.carbon.identity.oauth.common.OAuthConstants.OAuth20Params
 public class CodeTokenResponseValidator extends TokenValidator {
 
     public CodeTokenResponseValidator() {
+
+    }
+
+    /**
+     * Method to check whether the scope parameter string contains 'openid' as a scope.
+     *
+     * @param scope
+     * @return
+     */
+    private static boolean isContainOIDCScope(String scope) {
+
+        String[] scopeArray = scope.split("\\s+");
+        for (String anyScope : scopeArray) {
+            if (anyScope.equals(OAuthConstants.Scope.OPENID)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -43,11 +60,10 @@ public class CodeTokenResponseValidator extends TokenValidator {
 
         super.validateRequiredParameters(request);
 
-        String clientID = request.getParameter(CLIENT_ID);
-
         // For code token response type, the scope parameter should contain 'openid' as one of the scopes.
         String openIdScope = request.getParameter(SCOPE);
         if (StringUtils.isBlank(openIdScope) || !isContainOIDCScope(openIdScope)) {
+            String clientID = request.getParameter(CLIENT_ID);
             throw OAuthProblemException.error(OAuthError.TokenResponse.INVALID_REQUEST)
                     .description("Request with \'client_id\' = \'" + clientID + "\' has " +
                             "\'response_type\' for \'hybrid flow\'; but \'openid\' scope not found.");
@@ -66,22 +82,6 @@ public class CodeTokenResponseValidator extends TokenValidator {
 
     @Override
     public void validateContentType(HttpServletRequest request) throws OAuthProblemException {
-    }
 
-    /**
-     * Method to check whether the scope parameter string contains 'openid' as a scope.
-     *
-     * @param scope
-     * @return
-     */
-    private static boolean isContainOIDCScope(String scope) {
-
-        String[] scopeArray = scope.split("\\s+");
-        for (String anyScope : scopeArray) {
-            if (anyScope.equals(OAuthConstants.Scope.OPENID)) {
-                return true;
-            }
-        }
-        return false;
     }
 }

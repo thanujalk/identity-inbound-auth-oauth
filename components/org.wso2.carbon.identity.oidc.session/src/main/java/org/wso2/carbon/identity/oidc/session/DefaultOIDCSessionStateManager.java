@@ -19,23 +19,30 @@
 package org.wso2.carbon.identity.oidc.session;
 
 import org.apache.commons.codec.binary.Base64;
+import org.wso2.carbon.core.SameSiteCookie;
+import org.wso2.carbon.core.ServletCookie;
 
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.UUID;
+
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
 import static org.wso2.carbon.identity.oidc.session.util.OIDCSessionManagementUtil.getOrigin;
 
+/**
+ * Manager class for default OIDC session state.
+ */
 public class DefaultOIDCSessionStateManager implements OIDCSessionStateManager {
 
     private static final String RANDOM_ALG_SHA1 = "SHA1PRNG";
     private static final String DIGEST_ALG_SHA256 = "SHA-256";
 
     /**
-     * Generates a session state using the provided client id, client callback url and browser state cookie id
+     * Generates a session state using the provided client id, client callback url and browser state cookie id.
      *
      * @param clientId
      * @param rpCallBackUrl
@@ -50,7 +57,7 @@ public class DefaultOIDCSessionStateManager implements OIDCSessionStateManager {
                     clientId + " " + getOrigin(rpCallBackUrl) + " " + opBrowserState + " " + salt;
 
             MessageDigest digest = MessageDigest.getInstance(DIGEST_ALG_SHA256);
-            digest.update(sessionStateDataString.getBytes());
+            digest.update(sessionStateDataString.getBytes(StandardCharsets.UTF_8));
             return bytesToHex(digest.digest()) + "." + salt;
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("Error while calculating session state.", e);
@@ -58,16 +65,17 @@ public class DefaultOIDCSessionStateManager implements OIDCSessionStateManager {
     }
 
     /**
-     * Adds the browser state cookie to the response
+     * Adds the browser state cookie to the response.
      *
      * @param response
      * @return Cookie
      */
     public Cookie addOPBrowserStateCookie(HttpServletResponse response) {
 
-        Cookie cookie = new Cookie(OIDCSessionConstants.OPBS_COOKIE_ID, UUID.randomUUID().toString());
+        ServletCookie cookie = new ServletCookie(OIDCSessionConstants.OPBS_COOKIE_ID, UUID.randomUUID().toString());
         cookie.setSecure(true);
         cookie.setPath("/");
+        cookie.setSameSite(SameSiteCookie.NONE);
 
         response.addCookie(cookie);
         return cookie;

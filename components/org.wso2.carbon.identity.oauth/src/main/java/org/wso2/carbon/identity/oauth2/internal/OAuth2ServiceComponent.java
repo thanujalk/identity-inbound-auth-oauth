@@ -45,9 +45,12 @@ import org.wso2.carbon.identity.oauth2.client.authentication.OAuthClientAuthnSer
 import org.wso2.carbon.identity.oauth2.client.authentication.PublicClientAuthenticator;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
 import org.wso2.carbon.identity.oauth2.dao.SQLQueries;
+import org.wso2.carbon.identity.oauth2.device.api.DeviceAuthService;
+import org.wso2.carbon.identity.oauth2.device.api.DeviceAuthServiceImpl;
 import org.wso2.carbon.identity.oauth2.listener.TenantCreationEventListener;
 import org.wso2.carbon.identity.oauth2.token.bindings.TokenBinder;
 import org.wso2.carbon.identity.oauth2.token.bindings.impl.CookieBasedTokenBinder;
+import org.wso2.carbon.identity.oauth2.token.bindings.impl.SSOSessionBasedTokenBinder;
 import org.wso2.carbon.identity.oauth2.util.OAuth2Util;
 import org.wso2.carbon.identity.openidconnect.OpenIDConnectClaimFilter;
 import org.wso2.carbon.identity.openidconnect.OpenIDConnectClaimFilterImpl;
@@ -63,6 +66,9 @@ import java.sql.SQLException;
 import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.checkAudienceEnabled;
 import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.checkIDPIdColumnAvailable;
 
+/**
+ * OAuth 2 OSGi service component.
+ */
 @Component(
         name = "identity.oauth2.component",
         immediate = true
@@ -119,6 +125,8 @@ public class OAuth2ServiceComponent {
             } else {
                 log.error("TenantMgtListener could not be registered");
             }
+            // iniating oauth scopes
+            OAuth2Util.initiateOAuthScopePermissionsBindings(tenantId);
             // exposing server configuration as a service
             OAuthServerConfiguration oauthServerConfig = OAuthServerConfiguration.getInstance();
             bundleContext.registerService(OAuthServerConfiguration.class.getName(), oauthServerConfig, null);
@@ -136,6 +144,10 @@ public class OAuth2ServiceComponent {
             // Register cookie based access token binder.
             CookieBasedTokenBinder cookieBasedTokenBinder = new CookieBasedTokenBinder();
             bundleContext.registerService(TokenBinderInfo.class.getName(), cookieBasedTokenBinder, null);
+
+            // SSO session based access token binder.
+            SSOSessionBasedTokenBinder ssoSessionBasedTokenBinder = new SSOSessionBasedTokenBinder();
+            bundleContext.registerService(TokenBinderInfo.class.getName(), ssoSessionBasedTokenBinder, null);
 
             if (log.isDebugEnabled()) {
                 log.debug("Identity OAuth bundle is activated");
@@ -176,6 +188,17 @@ public class OAuth2ServiceComponent {
             } else {
                 OAuth2ServiceComponentHolder.setPkceEnabled(false);
                 log.info("PKCE Support is disabled.");
+            }
+
+            // Register device auth service.
+            ServiceRegistration deviceAuthService = bundleContext.registerService(DeviceAuthService.class.getName(),
+                    new DeviceAuthServiceImpl(), null);
+            if (deviceAuthService != null) {
+                if (log.isDebugEnabled()) {
+                    log.debug("DeviceAuthService registered.");
+                }
+            } else {
+                log.error("DeviceAuthService could not be registered.");
             }
 
             // Register the default OpenIDConnect claim filter

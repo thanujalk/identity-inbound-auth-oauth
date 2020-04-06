@@ -22,13 +22,21 @@ import org.wso2.carbon.identity.oauth.dcr.context.DCRMessageContext;
 
 import java.util.Map;
 
+/**
+ * Context class related to OIDC DCR Message.
+ */
 public class OIDCDCRMessageContext extends DCRMessageContext {
+
+    private static final long serialVersionUID = -5300677220286769250L;
+
     public OIDCDCRMessageContext(Map parameters) {
+
         super(parameters);
     }
 
     public OIDCDCRMessageContext(
             IdentityRequest identityRequest) {
+
         super(identityRequest);
     }
 }

@@ -30,6 +30,9 @@ import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
 import org.wso2.carbon.identity.oauth.dao.OAuthAppDO;
 import org.wso2.carbon.identity.oauth.dto.OAuthConsumerAppDTO;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2ClientException;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
+import org.wso2.carbon.identity.oauth2.IdentityOAuth2ServerException;
 import org.wso2.carbon.registry.core.utils.UUIDGenerator;
 import org.wso2.carbon.user.core.util.UserCoreUtil;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
@@ -37,9 +40,12 @@ import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+/**
+ * OAuth utility functionality.
+ */
 public final class OAuthUtil {
 
-    public static final Log log = LogFactory.getLog(OAuthUtil.class);
+    public static final Log LOG = LogFactory.getLog(OAuthUtil.class);
     private static final String ALGORITHM = "HmacSHA1";
 
     private OAuthUtil() {
@@ -81,9 +87,9 @@ public final class OAuthUtil {
             authenticatedIDP = ((AuthenticatedUser) authorizedUser).getFederatedIdPName();
         } else {
             authenticatedIDP = null;
-            if (log.isDebugEnabled()) {
-                log.debug("User is not an instance of AuthenticatedUser therefore cannot resolve authenticatedIDP " +
-                        "name");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("User object is not an instance of AuthenticatedUser therefore cannot resolve " +
+                        "authenticatedIDP name.");
             }
             clearOAuthCache(consumerKey, user);
         }
@@ -100,14 +106,42 @@ public final class OAuthUtil {
             authenticatedIDP = ((AuthenticatedUser) authorizedUser).getFederatedIdPName();
         } else {
             authenticatedIDP = null;
-            if (log.isDebugEnabled()) {
-                log.debug("User is not an instance of AuthenticatedUser therefore cannot resolve authenticatedIDP " +
-                        "name");
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("User object is not an instance of AuthenticatedUser therefore cannot resolve " +
+                        "authenticatedIDP name.");
             }
             clearOAuthCache(consumerKey, user, scope);
         }
 
         clearOAuthCacheWithAuthenticatedIDP(consumerKey, user, scope, authenticatedIDP);
+    }
+
+    /**
+     * Clear OAuth cache.
+     *
+     * @param consumerKey consumer key.
+     * @param authorizedUser authorized user.
+     * @param scope scope.
+     * @param tokenBindingReference token binding reference.
+     */
+    public static void clearOAuthCache(String consumerKey, User authorizedUser, String scope,
+            String tokenBindingReference) {
+
+        String user = UserCoreUtil.addDomainToName(authorizedUser.getUserName(), authorizedUser.getUserStoreDomain());
+        user = UserCoreUtil.addTenantDomainToEntry(user, authorizedUser.getTenantDomain());
+        String authenticatedIDP;
+        if (authorizedUser instanceof AuthenticatedUser) {
+            authenticatedIDP = ((AuthenticatedUser) authorizedUser).getFederatedIdPName();
+        } else {
+            authenticatedIDP = null;
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("User is not an instance of AuthenticatedUser therefore cannot resolve authenticatedIDP "
+                        + "name");
+            }
+            clearOAuthCache(consumerKey, user, scope);
+        }
+
+        clearOAuthCache(buildCacheKeyStringForToken(consumerKey, scope, user, authenticatedIDP, tokenBindingReference));
     }
 
     @Deprecated
@@ -163,6 +197,28 @@ public final class OAuthUtil {
         clearOAuthCache(consumerKey + ":" + authorizedUser + ":" + scope + ":" + authenticatedIDP);
     }
 
+    /**
+     * Build the cache key string when storing token info in cache.
+     *
+     * @param clientId         ClientId of the App.
+     * @param scope            Scopes used.
+     * @param authorizedUser   Authorised user.
+     * @param authenticatedIDP Authenticated IdP.
+     * @param tokenBindingReference Token binding reference.
+     * @return Cache key string combining the input parameters.
+     */
+    public static String buildCacheKeyStringForToken(String clientId, String scope, String authorizedUser,
+            String authenticatedIDP, String tokenBindingReference) {
+
+        boolean isUsernameCaseSensitive = IdentityUtil.isUserStoreInUsernameCaseSensitive(authorizedUser);
+        if (isUsernameCaseSensitive) {
+            return clientId + ":" + authorizedUser + ":" + scope + ":" + authenticatedIDP + ":" + tokenBindingReference;
+        } else {
+            return clientId + ":" + authorizedUser.toLowerCase() + ":" + scope + ":" + authenticatedIDP + ":"
+                    + tokenBindingReference;
+        }
+    }
+
     public static void clearOAuthCache(String oauthCacheKey) {
 
         OAuthCacheKey cacheKey = new OAuthCacheKey(oauthCacheKey);
@@ -196,14 +252,40 @@ public final class OAuthUtil {
      * @return
      */
     public static IdentityOAuthAdminException handleError(String message, Exception exception) {
-        log.error(message);
+
         if (exception == null) {
             return new IdentityOAuthAdminException(message);
         } else {
-            if (log.isDebugEnabled()) {
-                log.debug(exception);
-            }
-            return new IdentityOAuthAdminException(message, exception);
+            String errorCode = Error.UNEXPECTED_SERVER_ERROR.getErrorCode();
+            return new IdentityOAuthAdminException(errorCode, message, exception);
+        }
+    }
+
+    /**
+     * This is used to handle the OAuthAdminService exceptions depends on the exception type, there can be client
+     * exception and server exception.This will log the error message and
+     * return an IdentityOAuthClientException/IdentityOAuthServerException/IdentityOAuthAdminException exception
+     * depends on the IdentityOAuth2Exception exception type.
+     *
+     * @param message   Error message.
+     * @param exception Exception.
+     * @return
+     */
+    public static IdentityOAuthAdminException handleErrorWithExceptionType(String message,
+                                                                           IdentityOAuth2Exception exception) {
+
+        if (exception == null) {
+            return new IdentityOAuthAdminException(message);
+        }
+        if (StringUtils.isBlank(exception.getErrorCode())) {
+            handleError(message, exception);
+        }
+        if (exception instanceof IdentityOAuth2ClientException) {
+            return new IdentityOAuthClientException(exception.getErrorCode(), message, exception);
+        } else if (exception instanceof IdentityOAuth2ServerException) {
+            return new IdentityOAuthServerException(exception.getErrorCode(), message, exception);
+        } else {
+            return new IdentityOAuthAdminException(exception.getErrorCode(), message, exception);
         }
     }
 

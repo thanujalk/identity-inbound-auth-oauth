@@ -23,6 +23,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.wso2.carbon.CarbonConstants;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.context.PrivilegedCarbonContext;
 import org.wso2.carbon.identity.application.authentication.framework.model.AuthenticatedUser;
@@ -30,6 +31,7 @@ import org.wso2.carbon.identity.application.common.model.User;
 import org.wso2.carbon.identity.base.IdentityConstants;
 import org.wso2.carbon.identity.core.util.IdentityTenantUtil;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
+import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
 import org.wso2.carbon.identity.oauth.cache.CacheEntry;
 import org.wso2.carbon.identity.oauth.cache.OAuthCache;
 import org.wso2.carbon.identity.oauth.cache.OAuthCacheKey;
@@ -39,16 +41,19 @@ import org.wso2.carbon.identity.oauth2.IdentityOAuth2ScopeServerException;
 import org.wso2.carbon.identity.oauth2.authz.OAuthAuthzReqMessageContext;
 import org.wso2.carbon.identity.oauth2.bean.Scope;
 import org.wso2.carbon.identity.oauth2.dao.OAuthTokenPersistenceFactory;
+import org.wso2.carbon.identity.oauth2.internal.OAuth2ServiceComponentHolder;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 import org.wso2.carbon.identity.oauth2.model.ResourceScopeCacheEntry;
 import org.wso2.carbon.identity.oauth2.token.OAuthTokenReqMessageContext;
 import org.wso2.carbon.user.api.UserStoreException;
 import org.wso2.carbon.user.api.UserStoreManager;
+import org.wso2.carbon.user.core.UserCoreConstants;
 import org.wso2.carbon.user.core.service.RealmService;
 import org.wso2.carbon.utils.multitenancy.MultitenantUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -61,7 +66,11 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
     // The following constants are as same as the constants defined in
     // org.wso2.carbon.apimgt.keymgt.handlers.ResourceConstants.
     // If any changes are taking place in that these should also be updated accordingly.
+    // Setting the "retrieveRolesFromUserStoreForScopeValidation" as a System property which is used when
+    // skipping the scope role validation during token issuing using JWT bearer grant.
     public static final String CHECK_ROLES_FROM_SAML_ASSERTION = "checkRolesFromSamlAssertion";
+    public static final String RETRIEVE_ROLES_FROM_USERSTORE_FOR_SCOPE_VALIDATION =
+            "retrieveRolesFromUserStoreForScopeValidation";
     private static final String SCOPE_VALIDATOR_NAME = "Role based scope validator";
     private static final String OPENID = "openid";
 
@@ -120,7 +129,7 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
 
         //Return TRUE if - There does not exist a scope definition for the resource
         if (resourceScope == null) {
-            if(log.isDebugEnabled()){
+            if (log.isDebugEnabled()) {
                 log.debug("Resource '" + resource + "' is not protected with a scope");
             }
             return true;
@@ -128,9 +137,9 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
 
         List<String> scopeList = new ArrayList<>(Arrays.asList(scopes));
 
-        //If the access token does not bear the scope required for accessing the Resource.
-        if(!scopeList.contains(resourceScope)){
-            if(log.isDebugEnabled() && IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)){
+        // If the access token does not bear the scope required for accessing the Resource.
+        if (!scopeList.contains(resourceScope)) {
+            if (log.isDebugEnabled() && IdentityUtil.isTokenLoggable(IdentityConstants.IdentityTokens.ACCESS_TOKEN)) {
                 log.debug("Access token '" + accessTokenDO.getAccessToken() + "' does not bear the scope '" +
                             resourceScope + "'");
             }
@@ -138,10 +147,12 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
         }
 
         // If a federated user and CHECK_ROLES_FROM_SAML_ASSERTION system property is set to true,
+        // or if a federated user and RETRIEVE_ROLES_FROM_USERSTORE_FOR_SCOPE_VALIDATION system property is false,
         // avoid validating user roles.
         // This system property is set at server start using -D option, Thus will be a permanent property.
         if (accessTokenDO.getAuthzUser().isFederatedUser()
-                && Boolean.parseBoolean(System.getProperty(CHECK_ROLES_FROM_SAML_ASSERTION))) {
+                && (Boolean.parseBoolean(System.getProperty(CHECK_ROLES_FROM_SAML_ASSERTION)) ||
+                !(Boolean.parseBoolean(System.getProperty(RETRIEVE_ROLES_FROM_USERSTORE_FOR_SCOPE_VALIDATION))))) {
             return true;
         }
 
@@ -151,7 +162,7 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
             String[] userRoles = getUserRoles(authzUser);
 
             if (ArrayUtils.isEmpty(userRoles)) {
-                if(log.isDebugEnabled()){
+                if (log.isDebugEnabled()) {
                     log.debug("No roles associated for the user " + authzUser.getUserName());
                 }
                 return false;
@@ -195,6 +206,18 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
 
         // Remove openid scope from the list if available
         requestedScopes = (String[]) ArrayUtils.removeElement(requestedScopes, OPENID);
+
+        // Remove OIDC scopes from the list if exists.
+        try {
+            String[] oidcScopes = OAuth2ServiceComponentHolder.getInstance().getOAuthAdminService().getScopeNames();
+            for (String oidcScope : oidcScopes) {
+                requestedScopes = (String[]) ArrayUtils.removeElement(requestedScopes, oidcScope);
+            }
+
+        } catch (IdentityOAuthAdminException e) {
+            log.error("Unable to obtain OIDC scopes list.");
+            return false;
+        }
 
         //If the token is not requested for specific scopes, return true
         if (ArrayUtils.isEmpty(requestedScopes)) {
@@ -260,10 +283,18 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
             }
             return false;
         }
+
         //Check if the user still has a valid role for this scope.
+        Set<String> scopeRoles = new HashSet<>(rolesOfScope);
         rolesOfScope.retainAll(Arrays.asList(userRoles));
 
         if (rolesOfScope.isEmpty()) {
+            // when the role is an internal one, check if the user has valid role
+            boolean validInternalUserRole = validateInternalUserRoles(scopeRoles, userRoles);
+
+            if (validInternalUserRole) {
+                return true;
+            }
             if (log.isDebugEnabled()) {
                 log.debug("User does not have required roles for scope " + scopeName);
             }
@@ -271,6 +302,29 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
         }
 
         return true;
+    }
+
+    /**
+     * This method used to validate scopes which bind with internal roles
+     * @param scopeRoles roles in scope
+     * @param userRoles user roles
+     * @return
+     */
+    private boolean validateInternalUserRoles(Set<String> scopeRoles,  String[] userRoles) {
+        for (String role : scopeRoles) {
+            int index = role.indexOf(CarbonConstants.DOMAIN_SEPARATOR);
+            if (index > 0) {
+                String domain = role.substring(0, index);
+                if (UserCoreConstants.INTERNAL_DOMAIN.equalsIgnoreCase(domain)) {
+                    for (String userRole : userRoles) {
+                        if (role.equalsIgnoreCase(userRole)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     private String[] getUserRoles(User user) throws UserStoreException {
@@ -285,7 +339,7 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
             if (tenantId != MultitenantConstants.SUPER_TENANT_ID) {
                 PrivilegedCarbonContext.startTenantFlow();
                 PrivilegedCarbonContext.getThreadLocalCarbonContext().setTenantDomain(
-                        realmService.getTenantManager().getDomain(tenantId),true);
+                        realmService.getTenantManager().getDomain(tenantId), true);
                 tenantFlowStarted = true;
             }
 
@@ -320,5 +374,4 @@ public class JDBCScopeValidator extends OAuth2ScopeValidator {
 
         return tenantId;
     }
-
 }

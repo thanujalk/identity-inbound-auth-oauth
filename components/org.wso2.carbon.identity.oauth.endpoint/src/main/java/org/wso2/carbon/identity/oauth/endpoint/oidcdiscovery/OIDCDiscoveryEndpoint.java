@@ -21,6 +21,7 @@ package org.wso2.carbon.identity.oauth.endpoint.oidcdiscovery;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.wso2.carbon.base.MultitenantConstants;
 import org.wso2.carbon.base.ServerConfigurationException;
 import org.wso2.carbon.identity.core.util.IdentityUtil;
@@ -28,7 +29,6 @@ import org.wso2.carbon.identity.discovery.OIDCDiscoveryEndPointException;
 import org.wso2.carbon.identity.discovery.OIDCProcessor;
 import org.wso2.carbon.identity.discovery.builders.OIDProviderResponseBuilder;
 import org.wso2.carbon.identity.oauth.common.OAuthConstants;
-import org.wso2.carbon.identity.oauth.endpoint.oidcdiscovery.impl.OIDProviderJSONResponseBuilder;
 import org.wso2.carbon.identity.oauth.endpoint.util.EndpointUtil;
 
 import javax.servlet.http.HttpServletRequest;
@@ -40,12 +40,16 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+/**
+ * Rest implementation of OIDC discovery endpoint.
+ */
 @Path("/{issuer}/.well-known/openid-configuration")
 public class OIDCDiscoveryEndpoint {
 
     private static final Log log = LogFactory.getLog(OIDCDiscoveryEndpoint.class);
     private static final String DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN = "token";
     private static final String DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY = "oidcdiscovery";
+    private OIDProviderResponseBuilder oidProviderResponseBuilder;
 
     @GET
     @Produces("application/json")
@@ -64,23 +68,26 @@ public class OIDCDiscoveryEndpoint {
             return this.getResponse(request, tenantDomain);
         } else {
             Response.ResponseBuilder errorResponse = Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            if(log.isDebugEnabled()) {
-                log.debug("The discovery path component is " + discoveryEpPathComponent + " . The expected discovery path component is either '"
-                        + DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN + "' or '" + DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY );
+            if (log.isDebugEnabled()) {
+                log.debug("The discovery path component is " + discoveryEpPathComponent +
+                        " . The expected discovery path component is either '"
+                        + DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN + "' or '" +
+                        DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY);
             }
-            return errorResponse.entity("Invalid path to the discovery document. Received path : " + discoveryEpPathComponent + " is not resolvable")
-                    .build();
+            return errorResponse.entity("Invalid path to the discovery document. " +
+                    "Received path : " + discoveryEpPathComponent + " is not resolvable").build();
         }
     }
 
     private boolean isValidIssuer(String issuer) {
 
-        if (DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN.equals(issuer) || DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY
-                .equals(issuer)) {
+        if (DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN.equals(issuer) ||
+                DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY.equals(issuer)) {
             return true;
         }
         if (log.isDebugEnabled()) {
-            log.debug("DiscoveryEndpointPathComponent validation failed. DiscoveryEndpointPathComponent value: " + issuer + ", not matched to '"
+            log.debug("DiscoveryEndpointPathComponent validation failed. DiscoveryEndpointPathComponent value: " +
+                    issuer + ", not matched to '"
                     + DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_TOKEN + "' or '" +
                     DISCOVERY_ENDPOINT_PATH_COMPONENT_VALUE_OIDCDISCOVERY + "'");
         }
@@ -92,7 +99,7 @@ public class OIDCDiscoveryEndpoint {
         String response;
         OIDCProcessor processor = EndpointUtil.getOIDCService();
         try {
-            OIDProviderResponseBuilder responseBuilder = new OIDProviderJSONResponseBuilder();
+            OIDProviderResponseBuilder responseBuilder = getOidProviderResponseBuilder();
             response = responseBuilder.getOIDProviderConfigString(processor.getResponse(request, tenant));
         } catch (OIDCDiscoveryEndPointException e) {
             Response.ResponseBuilder errorResponse = Response.status(processor.handleError(e));
@@ -104,5 +111,16 @@ public class OIDCDiscoveryEndpoint {
         }
         Response.ResponseBuilder responseBuilder = Response.status(HttpServletResponse.SC_OK);
         return responseBuilder.entity(response).build();
+    }
+
+    @Autowired
+    public void setOidProviderResponseBuilder(OIDProviderResponseBuilder oidProviderResponseBuilder) {
+
+        this.oidProviderResponseBuilder = oidProviderResponseBuilder;
+    }
+
+    public OIDProviderResponseBuilder getOidProviderResponseBuilder() {
+
+        return this.oidProviderResponseBuilder;
     }
 }

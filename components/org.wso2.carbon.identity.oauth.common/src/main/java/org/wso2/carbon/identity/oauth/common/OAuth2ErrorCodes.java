@@ -35,14 +35,14 @@ public class OAuth2ErrorCodes {
     public static final String TEMPORARY_UNAVAILABLE = "temporarily_unavailable";
     public static final String CONSENT_REQUIRED = "consent_required";
 
-    private OAuth2ErrorCodes(){
+    private OAuth2ErrorCodes() {
 
     }
 
     /**
      * This class contains sub error codes for OAuth2 requests apart from the default error codes.
      */
-    public class OAuth2SubErrorCodes {
+    public static class OAuth2SubErrorCodes {
 
         public static final String INVALID_PKCE_CHALLENGE_CODE = "invalid_pkce_challenge_code";
         public static final String INVALID_CLIENT = "invalid_client";

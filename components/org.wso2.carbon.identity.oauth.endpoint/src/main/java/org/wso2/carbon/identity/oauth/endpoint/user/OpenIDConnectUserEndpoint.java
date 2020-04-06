@@ -50,6 +50,9 @@ import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEA
 import static org.wso2.carbon.identity.oauth.common.OAuthConstants.HTTP_RESP_HEADER_VAL_PRAGMA_NO_CACHE;
 import static org.wso2.carbon.identity.oauth2.util.OAuth2Util.isValidTokenBinding;
 
+/**
+ * Rest implementation for OIDC user info endpoint.
+ */
 @Path("/userinfo")
 public class OpenIDConnectUserEndpoint {
 
@@ -60,16 +63,18 @@ public class OpenIDConnectUserEndpoint {
     @Consumes("application/x-www-form-urlencoded")
     @Produces("application/json")
     public Response getUserClaims(@Context HttpServletRequest request) throws OAuthSystemException {
+
         String userInfoResponse;
         try {
             // validate the request
-            UserInfoRequestValidator requestValidator = UserInfoEndpointConfig.getInstance().getUserInfoRequestValidator();
+            UserInfoRequestValidator requestValidator = UserInfoEndpointConfig.getInstance().
+                    getUserInfoRequestValidator();
             String accessToken = requestValidator.validateRequest(request);
 
             // validate the access token
             UserInfoAccessTokenValidator tokenValidator =
                     UserInfoEndpointConfig.getInstance().getUserInfoAccessTokenValidator();
-            OAuth2TokenValidationResponseDTO tokenResponse = tokenValidator.validateToken(accessToken);
+            OAuth2TokenValidationResponseDTO tokenResponse = tokenValidator.validateToken(accessToken, request);
 
             if (tokenResponse.isValid()) {
                 if (!isValidTokenBinding(tokenResponse.getTokenBinding(), request)) {
@@ -102,15 +107,16 @@ public class OpenIDConnectUserEndpoint {
     @Consumes("application/x-www-form-urlencoded")
     @Produces("application/json")
     public Response getUserClaimsPost(@Context HttpServletRequest request) throws OAuthSystemException {
+
         return getUserClaims(request);
     }
 
     private ResponseBuilder getResponseBuilderWithCacheControlHeaders() {
+
         return Response.status(HttpServletResponse.SC_OK)
                 .header(HTTP_RESP_HEADER_CACHE_CONTROL, HTTP_RESP_HEADER_VAL_CACHE_CONTROL_NO_STORE)
                 .header(HTTP_RESP_HEADER_PRAGMA, HTTP_RESP_HEADER_VAL_PRAGMA_NO_CACHE);
     }
-
 
     /**
      * Build the error message response properly
@@ -120,6 +126,7 @@ public class OpenIDConnectUserEndpoint {
      * @throws OAuthSystemException
      */
     private Response handleError(UserInfoEndpointException e) throws OAuthSystemException {
+
         if (log.isDebugEnabled()) {
             log.debug("Error while building user info response.", e);
         }
@@ -140,14 +147,16 @@ public class OpenIDConnectUserEndpoint {
     }
 
     private Response buildServerErrorResponse(OAuthSystemException ex, int statusCode) throws OAuthSystemException {
+
         OAuthResponse response = OAuthASResponse.errorResponse(statusCode)
-                        .setError(OAuth2ErrorCodes.SERVER_ERROR)
-                        .setErrorDescription(ex.getMessage()).buildJSONMessage();
+                .setError(OAuth2ErrorCodes.SERVER_ERROR)
+                .setErrorDescription(ex.getMessage()).buildJSONMessage();
         return Response.status(response.getResponseStatus()).entity(response.getBody()).build();
     }
 
     private Response buildBadRequestErrorResponse(UserInfoEndpointException ex,
                                                   int statusCode) throws OAuthSystemException {
+
         OAuthResponse res = OAuthASResponse.errorResponse(statusCode)
                 .setError(ex.getErrorCode())
                 .setErrorDescription(ex.getErrorMessage())
@@ -157,6 +166,7 @@ public class OpenIDConnectUserEndpoint {
 
     private Response getErrorResponseWithAuthenticateHeader(UserInfoEndpointException ex,
                                                             int statusCode) throws OAuthSystemException {
+
         OAuthResponse res = OAuthASResponse.errorResponse(statusCode)
                 .setError(ex.getErrorCode())
                 .setErrorDescription(ex.getErrorMessage())

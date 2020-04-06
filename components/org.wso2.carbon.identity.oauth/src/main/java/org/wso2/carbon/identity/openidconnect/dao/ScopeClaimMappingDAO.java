@@ -20,7 +20,6 @@
 
 package org.wso2.carbon.identity.openidconnect.dao;
 
-import org.wso2.carbon.identity.oauth.IdentityOAuthAdminException;
 import org.wso2.carbon.identity.oauth.dto.ScopeDTO;
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 
@@ -46,8 +45,19 @@ public interface ScopeClaimMappingDAO {
      * @param tenantId tenant Id
      * @param scope    scope
      * @throws IdentityOAuth2Exception if an error occurs when adding a scope.
+     * @deprecated use {@link #addScope(ScopeDTO, int)} instead.
      */
+    @Deprecated
     void addScope(int tenantId, String scope, String[] claimsList) throws IdentityOAuth2Exception;
+
+    /**
+     * To add OIDC scope for a specific tenant.
+     *
+     * @param scope    Scope.
+     * @param tenantId Tenant ID.
+     * @throws IdentityOAuth2Exception If an error occurs when adding a scope.
+     */
+    void addScope(ScopeDTO scope, int tenantId) throws IdentityOAuth2Exception;
 
     /**
      * To retrieve all persisted oidc scopes with mapped claims.
@@ -70,8 +80,9 @@ public interface ScopeClaimMappingDAO {
     /**
      * To remove persisted scopes and claims.
      *
-     * @param scope oidc scope
-     * @throws IdentityOAuthAdminException if an error occurs when deleting scopes and claims.
+     * @param scope    oidc scope
+     * @param tenantId tenant id
+     * @throws IdentityOAuth2Exception if an error occurs when deleting scopes and claims.
      */
     void deleteScope(String scope, int tenantId) throws IdentityOAuth2Exception;
 
@@ -83,9 +94,20 @@ public interface ScopeClaimMappingDAO {
      * @param addClaims    list of oidc claims to be added
      * @param deleteClaims list of oidc claims to be deleted
      * @throws IdentityOAuth2Exception if an error occurs when adding a new claim for a scope.
+     * @deprecated use {@link #updateScope(ScopeDTO, int)} instead.
      */
+    @Deprecated
     void updateScope(String scope, int tenantId, List<String> addClaims, List<String> deleteClaims)
             throws IdentityOAuth2Exception;
+
+    /**
+     * To add new claims for an existing scope.
+     *
+     * @param scope    Updated scope name.
+     * @param tenantId Tenant Id.
+     * @throws IdentityOAuth2Exception If an error occurs when adding a new claim for a scope.
+     */
+    void updateScope(ScopeDTO scope, int tenantId) throws IdentityOAuth2Exception;
 
     /**
      * To retrieve oidc claims mapped to an oidc scope.
@@ -106,7 +128,7 @@ public interface ScopeClaimMappingDAO {
     boolean hasScopesPopulated(int tenantId) throws IdentityOAuth2Exception;
 
     /**
-     * To check whether the scope is existing.
+     * To check whether the OIDC scope is existing.
      *
      * @param scope    scope name
      * @param tenantId tenant id
@@ -114,5 +136,15 @@ public interface ScopeClaimMappingDAO {
      * @throws IdentityOAuth2Exception
      */
     boolean isScopeExist(String scope, int tenantId) throws IdentityOAuth2Exception;
+
+    /**
+     * Get OIDC scope details by scope name.
+     *
+     * @param scopeName Scope name.
+     * @param tenantId  Tenant ID.
+     * @return OIDC scope object.
+     * @throws IdentityOAuth2Exception
+     */
+    ScopeDTO getScope(String scopeName, int tenantId) throws IdentityOAuth2Exception;
 
 }

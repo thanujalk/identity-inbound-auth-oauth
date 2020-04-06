@@ -23,6 +23,7 @@ import org.wso2.carbon.identity.oauth.common.token.bindings.TokenBinderInfo;
 import org.wso2.carbon.identity.oauth2.dto.OAuth2AccessTokenReqDTO;
 
 import java.util.Optional;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -72,4 +73,13 @@ public interface TokenBinder extends TokenBinderInfo {
      * @return true if token binding is valid.
      */
     boolean isValidTokenBinding(Object request, String bindingReference);
+
+    /**
+     * Check validity of the token binding.
+     *
+     * @param oAuth2AccessTokenReqDTO OAuth2 access token request DTO.
+     * @param bindingReference token binding reference.
+     * @return true if token binding is valid.
+     */
+    boolean isValidTokenBinding(OAuth2AccessTokenReqDTO oAuth2AccessTokenReqDTO, String bindingReference);
 }

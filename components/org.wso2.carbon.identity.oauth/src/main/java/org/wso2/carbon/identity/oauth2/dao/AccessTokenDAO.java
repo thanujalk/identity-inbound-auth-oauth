@@ -24,14 +24,12 @@ import org.wso2.carbon.identity.application.authentication.framework.model.Authe
 import org.wso2.carbon.identity.oauth2.IdentityOAuth2Exception;
 import org.wso2.carbon.identity.oauth2.model.AccessTokenDO;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-/*
-NOTE
-This is the very first step of moving to simplified architecture for token persistence. New set of DAO classes  for
-each purpose  and factory class to get instance of each DAO classes were introduced  during  this step. Further methods
- on org.wso2.carbon.identity.oauth2.dao.TokenMgtDAO were distributed among new set of classes, each of these method
- need to be reviewed  and refactored  during next step.
+
+/**
+ * Access token related data access interface.
  */
 public interface AccessTokenDAO {
 
@@ -69,6 +67,12 @@ public interface AccessTokenDAO {
     AccessTokenDO getAccessToken(String accessTokenIdentifier, boolean includeExpired) throws IdentityOAuth2Exception;
 
     Set<String> getAccessTokensByUser(AuthenticatedUser authenticatedUser) throws IdentityOAuth2Exception;
+
+    default Set<AccessTokenDO> getAccessTokensByUserForOpenidScope(AuthenticatedUser authenticatedUser)
+            throws IdentityOAuth2Exception {
+
+        return null;
+    }
 
     Set<String> getActiveTokensByConsumerKey(String consumerKey) throws IdentityOAuth2Exception;
 
@@ -159,5 +163,20 @@ public interface AccessTokenDAO {
             throws IdentityOAuth2Exception {
 
         return getLatestAccessTokens(consumerKey, authzUser, userStoreDomain, scope, includeExpiredTokens, limit);
+    }
+
+    /**
+     * Update access token to the given state.
+     *
+     * @param tokenId         ID of the access token to update the state.
+     * @param tokenState      state to update.
+     * @throws IdentityOAuth2Exception
+     */
+    void updateAccessTokenState(String tokenId, String tokenState) throws IdentityOAuth2Exception;
+
+    default Set<AccessTokenDO> getActiveTokenSetWithTokenIdByConsumerKeyForOpenidScope(String consumerKey)
+            throws IdentityOAuth2Exception {
+
+        return Collections.emptySet();
     }
 }

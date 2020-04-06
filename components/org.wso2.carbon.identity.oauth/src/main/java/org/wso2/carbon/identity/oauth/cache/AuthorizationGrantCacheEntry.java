@@ -147,19 +147,23 @@ public class AuthorizationGrantCacheEntry extends CacheEntry {
         this.userAttributes = userAttributes;
     }
 
-    public String getCodeId(){
+    public String getCodeId() {
+
         return codeId;
     }
 
-    public void setCodeId(String codeId){
+    public void setCodeId(String codeId) {
+
         this.codeId = codeId;
     }
 
-    public String getTokenId(){
+    public String getTokenId() {
+
         return tokenId;
     }
 
-    public void setTokenId(String tokenId){
+    public void setTokenId(String tokenId) {
+
         this.tokenId = tokenId;
     }
 
